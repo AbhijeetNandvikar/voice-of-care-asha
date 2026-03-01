@@ -45,6 +45,11 @@ Transform spoken field notes into government-ready reports, reducing documentati
         i. minified css https://cdn.ux4g.gov.in/UX4G@2.0.8/css/ux4g-min.css
         ii. minified js https://cdn.ux4g.gov.in/UX4G@2.0.8/js/ux4g.min.js
         iii. Strict Use this design system across mobile app and web app
+5. This Repo will be a mono-repo and contains backend mobileapp and webapp codebases.
+    - We are planning to have following repo structure 
+        i. /backend - This is the backend repo
+        ii. /app - This is React-Native Codebase
+        iii. /web - This is the Web codebase
 
 
 ### 1. Mobile app.

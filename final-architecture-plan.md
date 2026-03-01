@@ -221,7 +221,7 @@ created_at      TIMESTAMP DEFAULT now()
 ```
 > **Note:** The actual HBNC question list must be provided by the team before implementation of the mobile data collection screen and template seeding.
 
-**`input_type` values:** `yes_no`, `yes_no_voice`, `number`, `text_voice`
+**`input_type` values:** `yes_no`, `yes_no_voice`, `number`, `text_voice`  // need to update this, we can just keep `yes_no`, `number` and `voice` type 
 
 ### `visits`
 ```sql
@@ -289,7 +289,9 @@ updated_at              TIMESTAMP DEFAULT now()
 **Base URL:** `https://<ec2-ip>/api/v1`
 **Auth:** Bearer JWT in `Authorization` header (all endpoints except login/signup)
 
-### Auth (`/auth`)
+### Auth (`/auth`) 
+IMPORTANT: Make sure you add CRUD API for all the endpoints. DELETE API is missing for all the below endpoints. add it at the time of implementation.
+
 | Method | Path | Description |
 |---|---|---|
 | POST | `/auth/login` | Login with `worker_id` + `password` → JWT |
@@ -318,6 +320,8 @@ updated_at              TIMESTAMP DEFAULT now()
 |---|---|---|
 | GET | `/templates` | Get all templates |
 | GET | `/templates/:type` | Get template by type (hbnc/anc/pnc) |
+| GET | `/templates/:id` | Get specific template |
+
 
 ### Mobile Init (`/mobile`)
 | Method | Path | Description |

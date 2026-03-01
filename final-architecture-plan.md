@@ -427,9 +427,8 @@ Root Stack
   - Play button → expo-speech reads the question aloud
 - Answer Section (conditional on `input_type`):
   - `yes_no`: Yes / No toggle buttons
-  - `yes_no_voice`: Yes / No buttons PLUS push-to-talk recording button
   - `number`: Numeric input
-  - `text_voice`: Text input + push-to-talk
+  - `voice`: push-to-talk
 - Voice Recording UI:
   - "Hold to Record" button → expo-av startRecording
   - Release → stopRecording → show audio playback bar

@@ -36,15 +36,15 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - _Requirements: 27_
 
 
-- [ ] 3. Implement authentication service and endpoints
-  - [ ] 3.1 Create authentication service
+- [x] 3. Implement authentication service and endpoints
+  - [x] 3.1 Create authentication service
     - Create backend/app/services/ directory with __init__.py
     - Implement AuthService class with methods: authenticate_worker(), setup_mpin(), verify_mpin(), create_access_token(), verify_token()
     - Use bcrypt for password hashing (cost factor 12) and MPIN hashing (cost factor 10)
     - Use python-jose for JWT token generation with 24-hour expiration
     - _Requirements: 1, 2, 28_
 
-  - [ ] 3.2 Create authentication endpoints
+  - [x] 3.2 Create authentication endpoints
     - Create backend/app/routers/ directory with __init__.py
     - Implement POST /api/v1/auth/login endpoint accepting worker_id and password, returning JWT token and worker profile
     - Implement POST /api/v1/auth/mpin/setup endpoint accepting mpin, storing bcrypt hash
@@ -52,7 +52,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Create JWT authentication dependency for protected routes
     - _Requirements: 1, 2, 28_
 
-  - [ ]* 3.3 Write unit tests for authentication
+  - [ ] 3.3 Write unit tests for authentication
     - Test valid login credentials
     - Test invalid login credentials
     - Test MPIN setup and verification

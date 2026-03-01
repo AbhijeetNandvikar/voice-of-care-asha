@@ -10,7 +10,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
 
 ### Day 1: Backend Foundation
 
-- [ ] 1. Set up monorepo structure and backend project
+- [x] 1. Set up monorepo structure and backend project
   - Create root directory with backend/, web/, and mobile/ folders
   - Initialize backend/ with Python virtual environment and FastAPI project
   - Create requirements.txt with FastAPI, SQLAlchemy, Alembic, psycopg2, python-jose, passlib, bcrypt, boto3, openpyxl, python-multipart, pydantic, pydantic-settings, uvicorn

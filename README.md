@@ -57,7 +57,34 @@ voice-of-care/
 
 ## Getting Started
 
-### Backend Setup
+### Quick Start with Docker (Recommended)
+
+The easiest way to run the entire stack is using Docker Compose:
+
+```bash
+# 1. Copy environment template
+cp .env.example .env
+
+# 2. Edit .env with your configuration
+nano .env
+
+# 3. Build and start all services
+docker-compose up -d
+
+# 4. View logs
+docker-compose logs -f
+
+# 5. Access the application
+# - Web Dashboard: http://localhost
+# - Backend API: http://localhost/api/v1
+# - API Docs: http://localhost/docs
+```
+
+For detailed Docker setup instructions, see [DOCKER_SETUP.md](DOCKER_SETUP.md).
+
+### Manual Setup
+
+#### Backend Setup
 
 ```bash
 cd backend
@@ -66,21 +93,39 @@ chmod +x setup.sh
 source venv/bin/activate
 cp .env.example .env
 # Edit .env with your configuration
-python -m app.main
+
+# Run migrations
+alembic upgrade head
+
+# Start server
+uvicorn app.main:app --reload
 ```
 
 The backend API will be available at http://localhost:8000
 
-### Web Dashboard Setup
+#### Web Dashboard Setup
 
-Coming in subsequent tasks.
+```bash
+cd web
+npm install
+npm run dev
+```
 
-### Mobile App Setup
+The web dashboard will be available at http://localhost:5173
+
+#### Mobile App Setup
 
 Coming in subsequent tasks.
 
 ## Requirements
 
+### With Docker (Recommended)
+- Docker Engine 20.10+
+- Docker Compose 2.0+
+- AWS Account (for S3, Transcribe, Bedrock)
+- 4GB+ RAM available
+
+### Manual Setup
 - Python 3.9+
 - Node.js 18+
 - PostgreSQL 15+
@@ -99,6 +144,8 @@ Coming in subsequent tasks.
 
 ## Documentation
 
+- [Docker Setup Guide](DOCKER_SETUP.md) - Complete Docker setup and deployment guide
+- [Database Setup Guide](backend/DATABASE_SETUP.md) - Database configuration and migrations
 - [Requirements Document](.kiro/specs/voice-of-care-asha/requirements.md)
 - [Design Document](.kiro/specs/voice-of-care-asha/design.md)
 - [Tasks](.kiro/specs/voice-of-care-asha/tasks.md)

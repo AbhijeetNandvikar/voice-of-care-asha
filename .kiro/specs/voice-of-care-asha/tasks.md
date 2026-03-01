@@ -725,37 +725,77 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Verify presigned URLs work for downloads
     - _Requirements: 13, 25, 26_
 
-- [ ] 52. Set up EC2 deployment
-  - [ ] 52.1 Create Docker configuration
+- [x] 52. Set up Docker configuration
+  - [x] 52.1 Create Docker files
     - Create backend/Dockerfile for FastAPI application
-    - Create docker-compose.yml with services: backend, postgres, nginx
-    - Configure environment variables in .env file
-    - Test Docker build and run locally
+    - Create backend/.dockerignore to exclude unnecessary files
+    - Create web/Dockerfile for React dashboard (multi-stage build)
+    - Create web/.dockerignore to exclude node_modules and build artifacts
     - _Requirements: 29_
 
-  - [ ] 52.2 Configure nginx reverse proxy
-    - Create nginx.conf with reverse proxy rules
-    - Route /api/v1/* to FastAPI backend
-    - Serve web dashboard static files
-    - Configure HTTPS with Let's Encrypt (or use HTTP for demo)
+  - [x] 52.2 Create docker-compose configuration
+    - Create docker-compose.yml with services: postgres, backend, nginx
+    - Configure PostgreSQL 15 with health checks and persistent volume
+    - Configure backend with environment variables and volume mounts
+    - Configure nginx reverse proxy with proper routing
+    - Create .env.example template for environment variables
+    - _Requirements: 28, 29_
+
+  - [x] 52.3 Configure nginx reverse proxy
+    - Create nginx/nginx.conf with reverse proxy rules
+    - Route /api/* to FastAPI backend with 5-minute timeout for sync/reports
+    - Serve web dashboard static files with SPA routing
+    - Configure gzip compression and static asset caching
+    - Add health check endpoint
+    - Include commented HTTPS configuration for production
     - _Requirements: 28_
 
-  - [ ] 52.3 Deploy to EC2
+  - [x] 52.4 Create Docker setup documentation
+    - Create DOCKER_SETUP.md with comprehensive setup guide
+    - Document quick start, service descriptions, and common commands
+    - Include development workflow and production deployment steps
+    - Add troubleshooting section and security best practices
+    - Document backup/restore procedures
+    - _Requirements: NFR6_
+
+  - [ ] 52.5 Test Docker setup locally
+    - Copy .env.example to .env and configure with test values
+    - Run `docker-compose build` to build all images
+    - Run `docker-compose up -d` to start all services
+    - Verify PostgreSQL is accessible and healthy
+    - Verify backend API is accessible at http://localhost/api/v1
+    - Verify migrations run successfully on backend startup
+    - Test API endpoints with curl or Postman
+    - _Requirements: 29_
+
+  - [ ] 52.6 Deploy to EC2
     - Launch EC2 t3.small instance with Ubuntu 22.04
-    - Install Docker and docker-compose
-    - Clone repository and copy .env file
-    - Run docker-compose up -d
-    - Verify backend API is accessible
-    - Verify web dashboard is accessible
+    - Configure security groups (ports 80, 443, 22)
+    - Install Docker and docker-compose on EC2
+    - Clone repository to EC2 instance
+    - Copy .env file with production configuration
+    - Run docker-compose up -d to start services
+    - Verify backend API is accessible via public IP
+    - Verify web dashboard is accessible via public IP
+    - Configure domain name (optional)
     - _Requirements: 29_
 
 
 - [ ] 53. Build and deploy web application
-  - Run `npm run build` in web/ directory
-  - Copy build output to nginx static files directory
-  - Configure nginx to serve index.html for all routes (SPA routing)
-  - Test web dashboard on deployed EC2 instance
-  - _Requirements: 35_
+  - [ ] 53.1 Build web application
+    - Navigate to web/ directory
+    - Run `npm install` to install dependencies
+    - Run `npm run build` to create production build
+    - Verify build output in web/dist/ directory
+    - _Requirements: 35_
+
+  - [ ] 53.2 Deploy with Docker
+    - Ensure web/dist/ is built before running docker-compose
+    - Nginx container will serve static files from web/dist/
+    - Verify web dashboard is accessible at http://localhost
+    - Test SPA routing (refresh on any route should work)
+    - Verify API calls from web dashboard work correctly
+    - _Requirements: 35_
 
 - [ ] 54. Configure AWS services
   - [ ] 54.1 Set up S3 buckets

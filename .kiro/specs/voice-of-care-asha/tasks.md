@@ -18,8 +18,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Create backend/app/ directory with __init__.py, main.py, config.py
   - _Requirements: 27, 28_
 
-- [ ] 2. Configure PostgreSQL and initialize database models
-  - [ ] 2.1 Create SQLAlchemy models for all entities
+- [x] 2. Configure PostgreSQL and initialize database models
+  - [x] 2.1 Create SQLAlchemy models for all entities
     - Create backend/app/models/ directory with __init__.py
     - Implement Worker model with fields: id, first_name, last_name, phone_number, aadhar_id, email, address, worker_type, worker_id, password_hash, mpin_hash, collection_center_id, profile_photo_url, meta_data (JSONB), created_at, updated_at
     - Implement Beneficiary model with fields: id, first_name, last_name, phone_number, aadhar_id, email, address, age, weight, mcts_id, beneficiary_type, assigned_asha_id (FK), meta_data (JSONB), created_at, updated_at
@@ -29,7 +29,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Implement CollectionCenter model with fields: id, name, address, meta_data (JSONB), created_at
     - _Requirements: 27_
 
-  - [ ] 2.2 Set up Alembic for database migrations
+  - [x] 2.2 Set up Alembic for database migrations
     - Initialize Alembic with `alembic init alembic`
     - Configure alembic.ini with DATABASE_URL from environment
     - Create initial migration with all models

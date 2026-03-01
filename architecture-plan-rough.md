@@ -43,7 +43,7 @@ Transform spoken field notes into government-ready reports, reducing documentati
 
 ### 1. Mobile app.
 
-This will be a simple react native app that will replace the register that ASHA workers have to carry to record various things. We want this app to be very user friendly, lightweight, should have ability to work in no network environment, should have multi lingual operation mode builtin. We want this app to work on lower end android devices. These are the initial screens that we are planning to have in our app.
+This will be a simple react native app that wilitl replace the register that ASHA workers have to carry to record various things. We want this app to be very user friendly, lightweight, should have ability to work in no network environment, should have multi lingual operation mode builtin. We want this app to work on lower end android devices. These are the initial screens that we are planning to have in our app.
 
 1. Login Screen:
 - Should have 2 input fields asha id and password for initial login.
@@ -90,6 +90,11 @@ The data collection phase:
     - We also need to find a way to display actions / suggestions. These are usually per question based.
     - Once the flow is completed. Show her a summary and ability to review question answers. Also add a reminder to sync this data to backend.
 
+Data Sync Logic
+    - Once the User clicks on sync CTA, Following thing need to happen
+        i. Refer local in app database check all visits that are not synced. create a payload and hit the post request for syncing
+        ii. If sync is successful, Mark all visits which are successfully synced as completed.
+        iii. If sync is not successful, Display Error Message to retry sync or contact admin  
 
 
 
@@ -213,3 +218,52 @@ Interface Compensation {
     meta_data : object
     approved_by_worker_id : number     
 }
+
+
+### Web App 
+Web App is a interface used by admin and medical officers etc. to monitor the asha workers progress, to analyze the data collected by the workers and offer data exports in government recognized formats. 
+There will be a chatbot which will help with retriveal and provide factbased data driven answers to questions.(Keep a plan ready for this but implementation will be done later)
+
+
+Screens:
+
+1. SignUp Screen
+    - This is a Standard SignUp where the following fields need to be collected :
+        firstname, lastname , address ,email id, phone number, aadhar id , worker type,
+        collection_center_id ,profile photo ,password and confirm password
+    - There will be 8 digit worker_id generated from the backend after signup. this     will be used for login
+
+2. Login Screen
+    - This is login screen to authenticate users created during signup. 
+        There will be 2 input fields : Worker_id and password 
+    -Forget Password will show message containing "Contact Admin: to reset password"   
+
+
+3. Dashboard Screen
+    - There will be multiple Cards in the dashboard Screen
+        i. List of ASHA Workers.  This will also have basic pagination, filters, search,exports data button and once we click on any item. Their details should be opened in a details modal
+        ii. List of Benificary.  This will also have basic pagination, filters, search,exports data button and once we click on any item. Their details should be opened in a details modal
+        iii. List of Visits.  This will also have basic pagination, filters, search,exports data button and once we click on any item. Their details should be opened in a details modal
+        iv. A graph showing number of visits happening each day. (Y-axis : No of Visits and X-axis : Date )
+    - Bottom right corner. There will be floating chat button. On click , We will see a chat drawer on right side 
+    - Left Side will have another navigation bar. This Bar will contain following links to following pages 
+        i. Profile
+        ii. Sync Log
+        iii. Onboarding Flow for Workers 
+        iv. Onboarding Flow for benificary
+        v. Data Export Screen
+
+
+
+4. Onboarding Screen for workers
+    - This will be a simple Form to onboard workers. Refer Worker Collections Interface for more details
+
+
+5. Onboarding Screen for benificary
+    - This will be a simple Form to onboard Benificary. Refer Benificary Collections Interface for more details.
+
+6. Visit Screen
+    - This will also have basic pagination, filters, search,exports data button and once we click on any item. Their details should be opened in a details modal
+    - On Click, Any item we will visualize data from visit collection interface.
+    - All data collected by workers in the app while data collection phases will be displayed here.
+    -

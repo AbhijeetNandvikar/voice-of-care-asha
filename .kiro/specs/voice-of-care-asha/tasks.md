@@ -60,7 +60,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Test token expiration
     - _Requirements: 1, 2_
 
-- [ ] 4. Implement mobile initialization endpoint
+- [x] 4. Implement mobile initialization endpoint
   - Create GET /api/v1/mobile/init endpoint that returns worker profile, assigned beneficiaries, and visit templates
   - Query beneficiaries where assigned_asha_id matches authenticated worker
   - Query all templates for HBNC visit type

@@ -40,6 +40,12 @@ Transform spoken field notes into government-ready reports, reducing documentati
 1. Mobile App - react native
 2. Web app - react.js
 3. Backend - fastAPI
+4. Style Guide used : (https://github.com/ux4g/ux4g-design-system-v1)
+    - For Styling , We are going to use ux4g design system
+        i. minified css https://cdn.ux4g.gov.in/UX4G@2.0.8/css/ux4g-min.css
+        ii. minified js https://cdn.ux4g.gov.in/UX4G@2.0.8/js/ux4g.min.js
+        iii. Strict Use this design system across mobile app and web app
+
 
 ### 1. Mobile app.
 

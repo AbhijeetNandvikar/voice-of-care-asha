@@ -2,7 +2,7 @@
 Pydantic schemas for workers endpoints
 """
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
@@ -39,6 +39,8 @@ class WorkerUpdate(BaseModel):
 
 class WorkerResponse(BaseModel):
     """Schema for worker response"""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     first_name: str
     last_name: str
@@ -53,9 +55,6 @@ class WorkerResponse(BaseModel):
     meta_data: Dict[str, Any]
     created_at: datetime
     updated_at: datetime
-    
-    class Config:
-        from_attributes = True
 
 
 class WorkerListResponse(BaseModel):

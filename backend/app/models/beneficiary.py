@@ -3,7 +3,7 @@ Beneficiary model for individuals receiving healthcare services
 """
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Numeric, JSON
-from datetime import datetime
+from datetime import datetime, UTC
 from app.models.base import Base
 
 
@@ -25,5 +25,5 @@ class Beneficiary(Base):
     beneficiary_type = Column(String, nullable=False)  # individual, child, mother_child
     assigned_asha_id = Column(Integer, ForeignKey("workers.id"))
     meta_data = Column(JSON, default={})
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC), nullable=False)

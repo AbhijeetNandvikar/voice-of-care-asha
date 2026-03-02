@@ -2,7 +2,7 @@
 Pydantic schemas for authentication endpoints
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -26,6 +26,8 @@ class MPINVerifyRequest(BaseModel):
 
 class WorkerProfile(BaseModel):
     """Worker profile information returned in authentication responses"""
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     first_name: str
     last_name: str
@@ -37,9 +39,6 @@ class WorkerProfile(BaseModel):
     profile_photo_url: Optional[str] = None
     collection_center_id: Optional[int] = None
     created_at: datetime
-    
-    class Config:
-        from_attributes = True
 
 
 class TokenResponse(BaseModel):

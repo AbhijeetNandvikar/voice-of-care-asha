@@ -76,7 +76,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
 
 ### Day 2: Backend CRUD + AWS Integration
 
-- [ ] 6. Implement Workers CRUD API
+- [x] 6. Implement Workers CRUD API
   - Create POST /api/v1/workers endpoint to create worker with auto-generated 8-digit worker_id
   - Create GET /api/v1/workers endpoint with pagination (default 20 items per page)
   - Create GET /api/v1/workers/{id} endpoint to retrieve single worker
@@ -85,7 +85,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Hash password with bcrypt before storing
   - _Requirements: 20, 27, 28_
 
-- [ ] 7. Implement Beneficiaries CRUD API
+- [x] 7. Implement Beneficiaries CRUD API
   - Create POST /api/v1/beneficiaries endpoint to create beneficiary with MCTS ID uniqueness validation
   - Create GET /api/v1/beneficiaries endpoint with pagination and filtering by beneficiary_type
   - Create GET /api/v1/beneficiaries/{id} endpoint to retrieve single beneficiary

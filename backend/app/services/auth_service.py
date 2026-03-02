@@ -2,7 +2,7 @@
 Authentication service for worker authentication, MPIN management, and JWT token handling
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -56,9 +56,9 @@ class AuthService:
         to_encode = data.copy()
         
         if expires_delta:
-            expire = datetime.utcnow() + expires_delta
+            expire = datetime.now(UTC) + expires_delta
         else:
-            expire = datetime.utcnow() + timedelta(hours=settings.JWT_EXPIRATION_HOURS)
+            expire = datetime.now(UTC) + timedelta(hours=settings.JWT_EXPIRATION_HOURS)
         
         to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
@@ -123,7 +123,7 @@ class AuthService:
             return False
         
         worker.mpin_hash = AuthService.hash_mpin(mpin)
-        worker.updated_at = datetime.utcnow()
+        worker.updated_at = datetime.now(UTC)
         db.commit()
         
         return True

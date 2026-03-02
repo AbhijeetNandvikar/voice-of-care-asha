@@ -69,14 +69,6 @@ class SyncService:
                 
                 synced_visit_ids.append(visit_id)
                 
-                # Create successful sync log
-                self._create_sync_log(
-                    visit_id=visit_id,
-                    worker_id=worker_id,
-                    status='completed',
-                    db=db
-                )
-                
                 logger.info(f"Successfully synced visit (local_id: {local_id}, server_id: {visit_id})")
                 
             except Exception as e:
@@ -87,15 +79,29 @@ class SyncService:
                     'local_id': local_id,
                     'error_message': error_message
                 })
-                
-                # Create failed sync log (without visit_id since it wasn't created)
-                self._create_sync_log(
-                    visit_id=None,
-                    worker_id=worker_id,
-                    status='failed',
-                    error_message=error_message,
-                    db=db
-                )
+        
+        # Create a single sync log for the entire sync operation
+        if len(synced_visit_ids) > 0:
+            # Create successful sync log with visit count
+            self._create_sync_log(
+                visit_id=synced_visit_ids[0] if len(synced_visit_ids) == 1 else None,
+                worker_id=worker_id,
+                status='completed',
+                db=db,
+                visit_count=len(synced_visit_ids)
+            )
+        
+        if len(failed_visits) > 0:
+            # Create failed sync log with error details
+            error_messages = [f"Visit {v['local_id']}: {v['error_message']}" for v in failed_visits]
+            self._create_sync_log(
+                visit_id=None,
+                worker_id=worker_id,
+                status='failed',
+                error_message="; ".join(error_messages),
+                db=db,
+                visit_count=len(failed_visits)
+            )
         
         # Commit all changes
         db.commit()
@@ -338,7 +344,8 @@ class SyncService:
         status: str,
         db: Session,
         visit_id: Optional[int] = None,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
+        visit_count: int = 1
     ) -> None:
         """
         Create a sync log entry
@@ -349,6 +356,7 @@ class SyncService:
             db: Database session
             visit_id: Optional visit ID if sync was successful
             error_message: Optional error message if sync failed
+            visit_count: Number of visits in this sync operation (default 1)
         """
         sync_log = SyncLog(
             visit_id=visit_id,
@@ -357,7 +365,7 @@ class SyncService:
             date_time=datetime.now(UTC),
             status=status,
             error_message=error_message,
-            meta_data={}
+            meta_data={'visit_count': visit_count}
         )
         
         db.add(sync_log)

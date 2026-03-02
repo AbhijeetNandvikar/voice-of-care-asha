@@ -21,6 +21,10 @@ from app.schemas.templates import (
     TemplateResponse,
     TemplateListResponse
 )
+from app.schemas.sync_logs import (
+    SyncLogResponse,
+    SyncLogListResponse
+)
 
 __all__ = [
     "LoginRequest",
@@ -35,5 +39,7 @@ __all__ = [
     "TemplateQuestion",
     "TemplateCreate",
     "TemplateResponse",
-    "TemplateListResponse"
+    "TemplateListResponse",
+    "SyncLogResponse",
+    "SyncLogListResponse"
 ]

@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: voice-of-care-db
+    environment:
+      POSTGRES_DB: voice_of_care
+      POSTGRES_USER: voice_of_care_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voice_of_care_user -d voice_of_care"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - voice-of-care-network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: voice-of-care-backend
+    environment:
+      DATABASE_URL: postgresql://voice_of_care_user:${POSTGRES_PASSWORD:-changeme}@postgres:5432/voice_of_care
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      S3_AUDIO_BUCKET: ${S3_AUDIO_BUCKET:-voice-of-care-audio}
+      S3_EXPORTS_BUCKET: ${S3_EXPORTS_BUCKET:-voice-of-care-exports}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    networks:
+      - voice-of-care-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: voice-of-care-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./web/dist:/usr/share/nginx/html:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+    networks:
+      - voice-of-care-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  voice-of-care-network:
+    driver: bridge

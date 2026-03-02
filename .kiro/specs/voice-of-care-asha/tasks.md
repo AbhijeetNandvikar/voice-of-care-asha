@@ -120,7 +120,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Implement error handling for S3 operations
   - _Requirements: 13, 28_
 
-- [ ] 10. Implement AWS Transcribe service
+- [x] 10. Implement AWS Transcribe service
   - Create backend/app/services/transcribe_service.py
   - Implement TranscribeService class with methods: start_transcription_job(), get_transcription_result()
   - Configure boto3 client for AWS Transcribe

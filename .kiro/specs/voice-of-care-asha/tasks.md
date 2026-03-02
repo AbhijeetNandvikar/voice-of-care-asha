@@ -322,8 +322,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - _Requirements: 20_
 
 
-- [ ] 24. Implement Beneficiaries page
-  - [ ] 24.1 Create beneficiaries page
+- [x] 24. Implement Beneficiaries page
+  - [x] 24.1 Create beneficiaries page
     - Create web/src/pages/Beneficiaries.tsx
     - Use DataTable component to display beneficiaries
     - Fetch beneficiaries from GET /api/v1/beneficiaries endpoint
@@ -333,7 +333,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Implement "Add Beneficiary" button opening a form modal
     - _Requirements: 21_
 
-  - [ ] 24.2 Create add beneficiary form
+  - [x] 24.2 Create add beneficiary form
     - Create web/src/components/AddBeneficiaryForm.tsx
     - Use UX4G form components
     - Include fields: first_name, last_name, mcts_id, phone, aadhar_id, address, age, weight, beneficiary_type, assigned_asha_id
@@ -342,7 +342,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Display success message and refresh table
     - _Requirements: 21, 27_
 
-  - [ ] 24.3 Implement beneficiary detail modal
+  - [x] 24.3 Implement beneficiary detail modal
     - Display beneficiary details when row is clicked
     - Use DetailModal component
     - Show all beneficiary fields including meta_data

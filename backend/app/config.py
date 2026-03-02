@@ -9,18 +9,20 @@ from typing import Optional
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
-    
+
     # Database Configuration
     DATABASE_URL: str
-    
+
     # JWT Configuration
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_HOURS: int = 24
-    
-    # AWS Configuration
-    AWS_ACCESS_KEY_ID: str
-    AWS_SECRET_ACCESS_KEY: str
+
+    # AWS Configuration — Optional so the server can start locally without real
+    # AWS credentials. These are only needed when calling Transcribe / Bedrock /
+    # S3 at request time, not at startup.
+    AWS_ACCESS_KEY_ID: Optional[str] = None
+    AWS_SECRET_ACCESS_KEY: Optional[str] = None
     AWS_REGION: str = "ap-south-1"
     AWS_S3_BUCKET_AUDIO: str
     AWS_S3_BUCKET_REPORTS: str
@@ -28,7 +30,7 @@ class Settings(BaseSettings):
     # Application Configuration
     APP_ENV: str = "development"
     DEBUG: bool = True
-    
+
     class Config:
         env_file = ".env"
         case_sensitive = True

@@ -7,7 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
-from app.database import Base, get_db
+from app.database import get_db
+from app.models.base import Base
 from app.main import app
 from app.models.worker import Worker
 from app.models.collection_center import CollectionCenter

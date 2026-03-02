@@ -52,7 +52,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Create JWT authentication dependency for protected routes
     - _Requirements: 1, 2, 28_
 
-  - [ ] 3.3 Write unit tests for authentication
+  - [x] 3.3 Write unit tests for authentication
     - Test valid login credentials
     - Test invalid login credentials
     - Test MPIN setup and verification
@@ -67,7 +67,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Return JSON with structure: {worker: {...}, beneficiaries: [...], templates: [...]}
   - _Requirements: 3_
 
-- [ ] 5. Checkpoint - Test backend foundation
+- [x] 5. Checkpoint - Test backend foundation
   - Run Alembic migrations to create database schema
   - Test authentication endpoints with Postman or curl
   - Verify JWT token generation and validation

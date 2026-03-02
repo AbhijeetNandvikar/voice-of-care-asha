@@ -165,7 +165,7 @@ def test_mobile_init_invalid_token(client):
         "/api/v1/mobile/init",
         headers={"Authorization": "Bearer invalid_token"}
     )
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 def test_mobile_init_non_asha_worker(client, db_session, test_collection_center):

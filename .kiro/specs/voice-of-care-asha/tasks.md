@@ -128,8 +128,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Generate unique job names using timestamp and visit ID
   - _Requirements: 26_
 
-- [ ] 11. Implement visits sync endpoint
-  - [ ] 11.1 Create sync service
+- [x] 11. Implement visits sync endpoint
+  - [x] 11.1 Create sync service
     - Create backend/app/services/sync_service.py
     - Implement SyncService class with method: process_visit_sync()
     - Accept multipart form data with visits_json and audio files
@@ -141,7 +141,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Handle partial failures gracefully
     - _Requirements: 13, 26, 33_
 
-  - [ ] 11.2 Create sync endpoint
+  - [x] 11.2 Create sync endpoint
     - Create POST /api/v1/sync/visits endpoint accepting multipart form data
     - Extract visits_json and audio files from form data
     - Call SyncService.process_visit_sync()

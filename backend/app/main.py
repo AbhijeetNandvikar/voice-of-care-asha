@@ -6,7 +6,7 @@ Configures routes, middleware, and application lifecycle
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routers import auth_router, mobile_router, workers_router, beneficiaries_router, templates_router
+from app.routers import auth_router, mobile_router, workers_router, beneficiaries_router, templates_router, sync_router
 
 # Create FastAPI application instance
 app = FastAPI(
@@ -31,6 +31,7 @@ app.include_router(mobile_router)
 app.include_router(workers_router)
 app.include_router(beneficiaries_router)
 app.include_router(templates_router)
+app.include_router(sync_router)
 
 
 @app.get("/")

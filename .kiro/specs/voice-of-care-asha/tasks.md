@@ -262,8 +262,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
 
 ### Day 4: Web Dashboard and Data Management
 
-- [ ] 20. Implement dashboard page with statistics
-  - [-] 20.1 Create dashboard API endpoints
+- [-] 20. Implement dashboard page with statistics
+  - [x] 20.1 Create dashboard API endpoints
     - Create GET /api/v1/dashboard/stats endpoint returning total workers, beneficiaries, visits, and pending syncs
     - Create GET /api/v1/dashboard/visits-by-date endpoint returning visit counts for last 30 days
     - _Requirements: 24_
@@ -276,7 +276,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Make stat cards clickable to navigate to detail pages
     - _Requirements: 24_
 
-- [ ] 21. Create reusable DataTable component
+- [x] 21. Create reusable DataTable component
   - Create web/src/components/DataTable.tsx
   - Accept props: columns, data, totalCount, currentPage, pageSize, onPageChange, onSearch, onFilter, onExport, onRowClick, loading
   - Use UX4G table styling

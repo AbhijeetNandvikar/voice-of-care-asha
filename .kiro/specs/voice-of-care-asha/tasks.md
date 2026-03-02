@@ -216,21 +216,21 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Set up axios instance with base URL and JWT token interceptor
   - _Requirements: 35_
 
-- [ ] 17. Implement web authentication and routing
-  - [ ] 17.1 Create authentication service
+- [x] 17. Implement web authentication and routing
+  - [x] 17.1 Create authentication service
     - Create web/src/services/authService.ts
     - Implement login(), logout(), getToken(), isAuthenticated() functions
     - Store JWT token in localStorage
     - _Requirements: 19, 28_
 
-  - [ ] 17.2 Set up routing with protected routes
+  - [x] 17.2 Set up routing with protected routes
     - Create web/src/App.tsx with React Router
     - Implement ProtectedRoute component that checks authentication
     - Define routes: /login, /signup, /dashboard, /workers, /beneficiaries, /visits, /sync-logs, /data-export, /profile
     - Redirect unauthenticated users to /login
     - _Requirements: 19_
 
-  - [ ] 17.3 Create sidebar layout
+  - [x] 17.3 Create sidebar layout
     - Create web/src/components/Layout.tsx with sidebar navigation
     - Use UX4G sidebar component styling
     - Include navigation links for all main pages
@@ -238,8 +238,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Include logout button
     - _Requirements: 35_
 
-- [ ] 18. Create login and signup pages
-  - [ ] 18.1 Create login page
+- [x] 18. Create login and signup pages
+  - [x] 18.1 Create login page
     - Create web/src/pages/Login.tsx
     - Use UX4G form components for worker_id and password inputs
     - Call authService.login() on form submission
@@ -247,7 +247,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Redirect to dashboard on successful login
     - _Requirements: 19_
 
-  - [ ] 18.2 Create signup page (placeholder)
+  - [x] 18.2 Create signup page (placeholder)
     - Create web/src/pages/Signup.tsx with basic form structure
     - Note: Full signup flow is out of scope for v1, workers are created by medical officers
     - _Requirements: 20_
@@ -263,12 +263,12 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
 ### Day 4: Web Dashboard and Data Management
 
 - [ ] 20. Implement dashboard page with statistics
-  - [ ] 20.1 Create dashboard API endpoints
+  - [-] 20.1 Create dashboard API endpoints
     - Create GET /api/v1/dashboard/stats endpoint returning total workers, beneficiaries, visits, and pending syncs
     - Create GET /api/v1/dashboard/visits-by-date endpoint returning visit counts for last 30 days
     - _Requirements: 24_
 
-  - [ ] 20.2 Create dashboard page
+  - [x] 20.2 Create dashboard page
     - Create web/src/pages/Dashboard.tsx
     - Display four stat cards using UX4G card components
     - Fetch stats from dashboard API

@@ -15,6 +15,12 @@ from app.schemas.beneficiaries import (
     BeneficiaryResponse,
     BeneficiaryListResponse
 )
+from app.schemas.templates import (
+    TemplateQuestion,
+    TemplateCreate,
+    TemplateResponse,
+    TemplateListResponse
+)
 
 __all__ = [
     "LoginRequest",
@@ -25,5 +31,9 @@ __all__ = [
     "BeneficiaryCreate",
     "BeneficiaryUpdate",
     "BeneficiaryResponse",
-    "BeneficiaryListResponse"
+    "BeneficiaryListResponse",
+    "TemplateQuestion",
+    "TemplateCreate",
+    "TemplateResponse",
+    "TemplateListResponse"
 ]

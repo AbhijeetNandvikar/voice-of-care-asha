@@ -2,10 +2,11 @@
 Pydantic schemas for beneficiaries endpoints
 """
 
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from decimal import Decimal
+import re
 
 
 class BeneficiaryCreate(BaseModel):
@@ -14,7 +15,7 @@ class BeneficiaryCreate(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=100)
     phone_number: Optional[str] = Field(None, pattern=r"^\d{10}$", description="10-digit phone number")
     aadhar_id: Optional[str] = Field(None, pattern=r"^\d{12}$", description="12-digit Aadhar ID")
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     address: Optional[str] = None
     age: Optional[int] = Field(None, ge=0, description="Age in years")
     weight: Optional[Decimal] = Field(None, ge=0, description="Weight in kg")
@@ -22,6 +23,16 @@ class BeneficiaryCreate(BaseModel):
     beneficiary_type: str = Field(..., pattern="^(individual|child|mother_child)$")
     assigned_asha_id: Optional[int] = Field(None, description="ID of assigned ASHA worker")
     meta_data: Optional[Dict[str, Any]] = None
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        """Validate email format if provided"""
+        if v is not None and v.strip():
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_pattern, v):
+                raise ValueError('Invalid email format')
+        return v
 
 
 class BeneficiaryUpdate(BaseModel):
@@ -30,7 +41,7 @@ class BeneficiaryUpdate(BaseModel):
     last_name: Optional[str] = Field(None, min_length=1, max_length=100)
     phone_number: Optional[str] = Field(None, pattern=r"^\d{10}$")
     aadhar_id: Optional[str] = Field(None, pattern=r"^\d{12}$")
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     address: Optional[str] = None
     age: Optional[int] = Field(None, ge=0)
     weight: Optional[Decimal] = Field(None, ge=0)
@@ -38,6 +49,16 @@ class BeneficiaryUpdate(BaseModel):
     beneficiary_type: Optional[str] = Field(None, pattern="^(individual|child|mother_child)$")
     assigned_asha_id: Optional[int] = None
     meta_data: Optional[Dict[str, Any]] = None
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        """Validate email format if provided"""
+        if v is not None and v.strip():
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_pattern, v):
+                raise ValueError('Invalid email format')
+        return v
 
 
 class BeneficiaryResponse(BaseModel):

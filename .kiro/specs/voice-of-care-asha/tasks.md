@@ -93,8 +93,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Implement search by MCTS ID or name query parameter
   - _Requirements: 21, 27_
 
-- [ ] 8. Implement Templates API and seed HBNC template
-  - [ ] 8.1 Create templates endpoints
+- [x] 8. Implement Templates API and seed HBNC template
+  - [x] 8.1 Create templates endpoints
     - Create POST /api/v1/templates endpoint to create template
     - Create GET /api/v1/templates endpoint to list templates
     - Create GET /api/v1/templates/{id} endpoint to retrieve single template
@@ -102,7 +102,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Validate questions array structure with required fields
     - _Requirements: 34_
 
-  - [ ] 8.2 Create HBNC template seed script
+  - [x] 8.2 Create HBNC template seed script
     - Create backend/scripts/seed_hbnc_template.py
     - Define HBNC questions with English and Hindi translations
     - Include questions for: breathing, feeding, temperature, umbilical cord, jaundice, weight

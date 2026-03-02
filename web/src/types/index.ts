@@ -73,6 +73,20 @@ export interface PaginatedResponse<T> {
   total_pages: number;
 }
 
+// Sync Log types
+export interface SyncLog {
+  id: number;
+  visit_id: number;
+  worker_id: number;
+  collection_center_id?: number;
+  date_time: string;
+  status: 'completed' | 'incomplete' | 'failed';
+  error_message?: string;
+  meta_data?: Record<string, any>;
+  worker_name?: string;
+  visit_count?: number;
+}
+
 // API Error types
 export interface ApiError {
   detail: string;

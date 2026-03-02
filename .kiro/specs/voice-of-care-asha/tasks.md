@@ -377,7 +377,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Use UX4G badge for sync status
     - _Requirements: 22_
 
-- [ ] 27. Implement Sync Logs page
+- [x] 27. Implement Sync Logs page
   - Create web/src/pages/SyncLogs.tsx
   - Use DataTable component to display sync logs
   - Fetch sync logs from GET /api/v1/sync-logs endpoint

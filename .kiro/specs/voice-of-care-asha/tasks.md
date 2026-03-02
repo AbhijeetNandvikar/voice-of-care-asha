@@ -263,7 +263,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
 ### Day 4: Web Dashboard and Data Management
 
 - [ ] 20. Implement dashboard page with statistics
-  - [ ] 20.1 Create dashboard API endpoints
+  - [x] 20.1 Create dashboard API endpoints
     - Create GET /api/v1/dashboard/stats endpoint returning total workers, beneficiaries, visits, and pending syncs
     - Create GET /api/v1/dashboard/visits-by-date endpoint returning visit counts for last 30 days
     - _Requirements: 24_

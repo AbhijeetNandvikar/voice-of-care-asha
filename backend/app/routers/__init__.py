@@ -12,4 +12,7 @@ from app.routers.sync_logs import router as sync_logs_router
 from app.routers.reports import router as reports_router
 from app.routers.dashboard import router as dashboard_router
 
+from app.routers.dashboard import router as dashboard_router
+from app.routers.visits import router as visits_router
+
 __all__ = ["auth_router", "mobile_router", "workers_router", "beneficiaries_router", "templates_router", "sync_router", "sync_logs_router", "reports_router", "dashboard_router"]

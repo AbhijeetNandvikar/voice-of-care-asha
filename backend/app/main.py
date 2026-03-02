@@ -35,6 +35,8 @@ app.include_router(sync_router)
 app.include_router(sync_logs_router)
 app.include_router(reports_router)
 app.include_router(dashboard_router)
+app.include_router(dashboard_router)
+app.include_router(visits_router)
 
 
 @app.get("/")

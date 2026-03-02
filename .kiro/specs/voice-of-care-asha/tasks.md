@@ -296,8 +296,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Implement JSON pretty-printing for visit_data
   - _Requirements: 20, 21, 22_
 
-- [ ] 23. Implement Workers page
-  - [ ] 23.1 Create workers page
+- [x] 23. Implement Workers page
+  - [x] 23.1 Create workers page
     - Create web/src/pages/Workers.tsx
     - Use DataTable component to display workers
     - Fetch workers from GET /api/v1/workers endpoint
@@ -306,7 +306,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Implement "Add Worker" button opening a form modal
     - _Requirements: 20_
 
-  - [ ] 23.2 Create add worker form
+  - [x] 23.2 Create add worker form
     - Create web/src/components/AddWorkerForm.tsx
     - Use UX4G form components
     - Include fields: first_name, last_name, phone, email, aadhar_id, address, worker_type, collection_center_id, password
@@ -315,7 +315,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Display success message and refresh table
     - _Requirements: 20, 27_
 
-  - [ ] 23.3 Implement worker detail modal
+  - [x] 23.3 Implement worker detail modal
     - Display worker details when row is clicked
     - Use DetailModal component
     - Show all worker fields including meta_data

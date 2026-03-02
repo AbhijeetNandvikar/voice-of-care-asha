@@ -287,7 +287,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Emit row click events
   - _Requirements: 20, 21, 22, 23_
 
-- [ ] 22. Create reusable DetailModal component
+- [x] 22. Create reusable DetailModal component
   - Create web/src/components/DetailModal.tsx
   - Accept props: title, fields, isOpen, onClose
   - Use UX4G modal component

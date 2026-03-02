@@ -358,8 +358,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
 
 ### Day 5: Web Completion + Mobile Auth
 
-- [ ] 26. Implement Visits page
-  - [ ] 26.1 Create visits page
+- [x] 26. Implement Visits page
+  - [x] 26.1 Create visits page
     - Create web/src/pages/Visits.tsx
     - Use DataTable component to display visits
     - Fetch visits from GET /api/v1/visits endpoint (create if not exists)
@@ -369,7 +369,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Implement search by MCTS_ID
     - _Requirements: 22_
 
-  - [ ] 26.2 Create visit detail modal
+  - [x] 26.2 Create visit detail modal
     - Create web/src/components/VisitDetailModal.tsx
     - Display visit header: beneficiary, worker, date, type, day
     - Parse and display visit_data JSON with questions and answers

@@ -3,7 +3,7 @@ Visit model for healthcare visit records
 """
 
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, JSON
-from datetime import datetime
+from datetime import datetime, UTC
 from app.models.base import Base
 
 
@@ -23,5 +23,5 @@ class Visit(Base):
     visit_data = Column(JSON, nullable=False)
     meta_data = Column(JSON, default={})
     synced_at = Column(DateTime)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC), nullable=False)

@@ -12,8 +12,9 @@ from app.models.base import Base
 from app.main import app
 from app.models.worker import Worker
 from app.models.collection_center import CollectionCenter
+from app.models.beneficiary import Beneficiary
 from app.services.auth_service import AuthService
-from datetime import datetime
+from datetime import datetime, UTC
 
 
 # Create in-memory SQLite database for testing
@@ -83,8 +84,8 @@ def test_worker(db_session, test_collection_center):
         password_hash=AuthService.hash_password("testpass123"),
         collection_center_id=test_collection_center.id,
         meta_data={},
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
     )
     db_session.add(worker)
     db_session.commit()
@@ -108,10 +109,35 @@ def test_worker_with_mpin(db_session, test_collection_center):
         mpin_hash=AuthService.hash_mpin("1234"),
         collection_center_id=test_collection_center.id,
         meta_data={},
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
     )
     db_session.add(worker)
     db_session.commit()
     db_session.refresh(worker)
     return worker
+
+
+@pytest.fixture(scope="function")
+def test_beneficiary(db_session, test_worker):
+    """Create a test beneficiary"""
+    beneficiary = Beneficiary(
+        first_name="Test",
+        last_name="Beneficiary",
+        phone_number="9876543299",
+        aadhar_id="987654321098",
+        email="beneficiary@example.com",
+        address="Beneficiary Address",
+        age=25,
+        weight=55.5,
+        mcts_id="TESTMCTS001",
+        beneficiary_type="mother_child",
+        assigned_asha_id=test_worker.id,
+        meta_data={},
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC)
+    )
+    db_session.add(beneficiary)
+    db_session.commit()
+    db_session.refresh(beneficiary)
+    return beneficiary

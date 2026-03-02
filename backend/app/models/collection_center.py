@@ -3,7 +3,7 @@ Collection Center model
 """
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, JSON
-from datetime import datetime
+from datetime import datetime, UTC
 from app.models.base import Base
 
 
@@ -16,4 +16,4 @@ class CollectionCenter(Base):
     name = Column(String, nullable=False)
     address = Column(Text)
     meta_data = Column(JSON, default={})
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)

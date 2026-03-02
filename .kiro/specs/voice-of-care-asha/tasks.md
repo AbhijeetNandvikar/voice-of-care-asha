@@ -76,7 +76,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
 
 ### Day 2: Backend CRUD + AWS Integration
 
-- [ ] 6. Implement Workers CRUD API
+- [x] 6. Implement Workers CRUD API
   - Create POST /api/v1/workers endpoint to create worker with auto-generated 8-digit worker_id
   - Create GET /api/v1/workers endpoint with pagination (default 20 items per page)
   - Create GET /api/v1/workers/{id} endpoint to retrieve single worker
@@ -85,7 +85,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Hash password with bcrypt before storing
   - _Requirements: 20, 27, 28_
 
-- [ ] 7. Implement Beneficiaries CRUD API
+- [x] 7. Implement Beneficiaries CRUD API
   - Create POST /api/v1/beneficiaries endpoint to create beneficiary with MCTS ID uniqueness validation
   - Create GET /api/v1/beneficiaries endpoint with pagination and filtering by beneficiary_type
   - Create GET /api/v1/beneficiaries/{id} endpoint to retrieve single beneficiary
@@ -93,8 +93,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Implement search by MCTS ID or name query parameter
   - _Requirements: 21, 27_
 
-- [ ] 8. Implement Templates API and seed HBNC template
-  - [ ] 8.1 Create templates endpoints
+- [x] 8. Implement Templates API and seed HBNC template
+  - [x] 8.1 Create templates endpoints
     - Create POST /api/v1/templates endpoint to create template
     - Create GET /api/v1/templates endpoint to list templates
     - Create GET /api/v1/templates/{id} endpoint to retrieve single template
@@ -102,7 +102,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Validate questions array structure with required fields
     - _Requirements: 34_
 
-  - [ ] 8.2 Create HBNC template seed script
+  - [x] 8.2 Create HBNC template seed script
     - Create backend/scripts/seed_hbnc_template.py
     - Define HBNC questions with English and Hindi translations
     - Include questions for: breathing, feeding, temperature, umbilical cord, jaundice, weight
@@ -111,7 +111,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - _Requirements: 5, 34_
 
 
-- [ ] 9. Implement AWS S3 service
+- [x] 9. Implement AWS S3 service
   - Create backend/app/services/s3_service.py
   - Implement S3Service class with methods: upload_file(), generate_presigned_url(), delete_file()
   - Configure boto3 client with AWS credentials from environment
@@ -120,7 +120,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Implement error handling for S3 operations
   - _Requirements: 13, 28_
 
-- [ ] 10. Implement AWS Transcribe service
+- [x] 10. Implement AWS Transcribe service
   - Create backend/app/services/transcribe_service.py
   - Implement TranscribeService class with methods: start_transcription_job(), get_transcription_result()
   - Configure boto3 client for AWS Transcribe
@@ -128,8 +128,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Generate unique job names using timestamp and visit ID
   - _Requirements: 26_
 
-- [ ] 11. Implement visits sync endpoint
-  - [ ] 11.1 Create sync service
+- [x] 11. Implement visits sync endpoint
+  - [x] 11.1 Create sync service
     - Create backend/app/services/sync_service.py
     - Implement SyncService class with method: process_visit_sync()
     - Accept multipart form data with visits_json and audio files
@@ -141,7 +141,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Handle partial failures gracefully
     - _Requirements: 13, 26, 33_
 
-  - [ ] 11.2 Create sync endpoint
+  - [x] 11.2 Create sync endpoint
     - Create POST /api/v1/sync/visits endpoint accepting multipart form data
     - Extract visits_json and audio files from form data
     - Call SyncService.process_visit_sync()
@@ -155,7 +155,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Test that syncing the same visit multiple times produces the same result
     - Verify no duplicate sync_log entries with status 'completed'
 
-- [ ] 12. Implement sync logs endpoint
+- [x] 12. Implement sync logs endpoint
   - Create GET /api/v1/sync-logs endpoint with pagination
   - Support filtering by status (completed, incomplete, failed)
   - Support filtering by date range
@@ -172,7 +172,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
 
 ### Day 3: Backend Reports + Web Shell
 
-- [ ] 14. Implement AWS Bedrock service
+- [x] 14. Implement AWS Bedrock service
   - Create backend/app/services/bedrock_service.py
   - Implement BedrockService class with methods: invoke_claude(), format_hbnc_report_prompt()
   - Configure boto3 client for AWS Bedrock with model: anthropic.claude-3-5-sonnet-20241022-v2:0
@@ -181,8 +181,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Implement error handling and timeout (60 seconds)
   - _Requirements: 25_
 
-- [ ] 15. Implement Excel report generation
-  - [ ] 15.1 Create report service
+- [x] 15. Implement Excel report generation
+  - [x] 15.1 Create report service
     - Create backend/app/services/report_service.py
     - Implement ReportService class with methods: generate_report(), query_visits(), build_excel(), upload_report_to_s3()
     - Query visits from PostgreSQL based on filters (visit_type, start_date, end_date, worker_id)
@@ -193,7 +193,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Include summary row with total visit count
     - _Requirements: 25, 32_
 
-  - [ ] 15.2 Create reports endpoint
+  - [x] 15.2 Create reports endpoint
     - Create POST /api/v1/reports/generate endpoint accepting filters
     - Call ReportService.generate_report()
     - Upload Excel file to S3 exports bucket
@@ -262,7 +262,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
 
 ### Day 4: Web Dashboard and Data Management
 
-- [-] 20. Implement dashboard page with statistics
+- [ ] 20. Implement dashboard page with statistics
   - [x] 20.1 Create dashboard API endpoints
     - Create GET /api/v1/dashboard/stats endpoint returning total workers, beneficiaries, visits, and pending syncs
     - Create GET /api/v1/dashboard/visits-by-date endpoint returning visit counts for last 30 days

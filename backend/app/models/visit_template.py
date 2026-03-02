@@ -3,7 +3,7 @@ Visit Template model for structured questionnaires
 """
 
 from sqlalchemy import Column, Integer, String, DateTime, JSON
-from datetime import datetime
+from datetime import datetime, UTC
 from app.models.base import Base
 
 
@@ -17,4 +17,4 @@ class VisitTemplate(Base):
     name = Column(String, nullable=False)
     questions = Column(JSON, nullable=False)
     meta_data = Column(JSON, default={})
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)

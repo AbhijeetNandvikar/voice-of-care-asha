@@ -9,11 +9,37 @@ from app.schemas.auth import (
     TokenResponse,
     WorkerProfile
 )
+from app.schemas.beneficiaries import (
+    BeneficiaryCreate,
+    BeneficiaryUpdate,
+    BeneficiaryResponse,
+    BeneficiaryListResponse
+)
+from app.schemas.templates import (
+    TemplateQuestion,
+    TemplateCreate,
+    TemplateResponse,
+    TemplateListResponse
+)
+from app.schemas.sync_logs import (
+    SyncLogResponse,
+    SyncLogListResponse
+)
 
 __all__ = [
     "LoginRequest",
     "MPINSetupRequest",
     "MPINVerifyRequest",
     "TokenResponse",
-    "WorkerProfile"
+    "WorkerProfile",
+    "BeneficiaryCreate",
+    "BeneficiaryUpdate",
+    "BeneficiaryResponse",
+    "BeneficiaryListResponse",
+    "TemplateQuestion",
+    "TemplateCreate",
+    "TemplateResponse",
+    "TemplateListResponse",
+    "SyncLogResponse",
+    "SyncLogListResponse"
 ]

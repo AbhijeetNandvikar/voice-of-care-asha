@@ -208,7 +208,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Test Claude API failure handling
 
 
-- [ ] 16. Initialize React web application
+- [x] 16. Initialize React web application
   - Create web/ directory and initialize Vite React TypeScript project
   - Install dependencies: react, react-dom, react-router-dom, axios, recharts
   - Include UX4G Design System from CDN (version 2.0.8) in index.html
@@ -216,21 +216,21 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Set up axios instance with base URL and JWT token interceptor
   - _Requirements: 35_
 
-- [ ] 17. Implement web authentication and routing
-  - [ ] 17.1 Create authentication service
+- [x] 17. Implement web authentication and routing
+  - [x] 17.1 Create authentication service
     - Create web/src/services/authService.ts
     - Implement login(), logout(), getToken(), isAuthenticated() functions
     - Store JWT token in localStorage
     - _Requirements: 19, 28_
 
-  - [ ] 17.2 Set up routing with protected routes
+  - [x] 17.2 Set up routing with protected routes
     - Create web/src/App.tsx with React Router
     - Implement ProtectedRoute component that checks authentication
     - Define routes: /login, /signup, /dashboard, /workers, /beneficiaries, /visits, /sync-logs, /data-export, /profile
     - Redirect unauthenticated users to /login
     - _Requirements: 19_
 
-  - [ ] 17.3 Create sidebar layout
+  - [x] 17.3 Create sidebar layout
     - Create web/src/components/Layout.tsx with sidebar navigation
     - Use UX4G sidebar component styling
     - Include navigation links for all main pages
@@ -238,8 +238,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Include logout button
     - _Requirements: 35_
 
-- [ ] 18. Create login and signup pages
-  - [ ] 18.1 Create login page
+- [x] 18. Create login and signup pages
+  - [x] 18.1 Create login page
     - Create web/src/pages/Login.tsx
     - Use UX4G form components for worker_id and password inputs
     - Call authService.login() on form submission
@@ -247,7 +247,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Redirect to dashboard on successful login
     - _Requirements: 19_
 
-  - [ ] 18.2 Create signup page (placeholder)
+  - [x] 18.2 Create signup page (placeholder)
     - Create web/src/pages/Signup.tsx with basic form structure
     - Note: Full signup flow is out of scope for v1, workers are created by medical officers
     - _Requirements: 20_
@@ -262,13 +262,13 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
 
 ### Day 4: Web Dashboard and Data Management
 
-- [ ] 20. Implement dashboard page with statistics
-  - [ ] 20.1 Create dashboard API endpoints
+- [-] 20. Implement dashboard page with statistics
+  - [x] 20.1 Create dashboard API endpoints
     - Create GET /api/v1/dashboard/stats endpoint returning total workers, beneficiaries, visits, and pending syncs
     - Create GET /api/v1/dashboard/visits-by-date endpoint returning visit counts for last 30 days
     - _Requirements: 24_
 
-  - [ ] 20.2 Create dashboard page
+  - [x] 20.2 Create dashboard page
     - Create web/src/pages/Dashboard.tsx
     - Display four stat cards using UX4G card components
     - Fetch stats from dashboard API
@@ -276,7 +276,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Make stat cards clickable to navigate to detail pages
     - _Requirements: 24_
 
-- [ ] 21. Create reusable DataTable component
+- [x] 21. Create reusable DataTable component
   - Create web/src/components/DataTable.tsx
   - Accept props: columns, data, totalCount, currentPage, pageSize, onPageChange, onSearch, onFilter, onExport, onRowClick, loading
   - Use UX4G table styling
@@ -287,7 +287,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Emit row click events
   - _Requirements: 20, 21, 22, 23_
 
-- [ ] 22. Create reusable DetailModal component
+- [x] 22. Create reusable DetailModal component
   - Create web/src/components/DetailModal.tsx
   - Accept props: title, fields, isOpen, onClose
   - Use UX4G modal component
@@ -296,8 +296,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Implement JSON pretty-printing for visit_data
   - _Requirements: 20, 21, 22_
 
-- [ ] 23. Implement Workers page
-  - [ ] 23.1 Create workers page
+- [x] 23. Implement Workers page
+  - [x] 23.1 Create workers page
     - Create web/src/pages/Workers.tsx
     - Use DataTable component to display workers
     - Fetch workers from GET /api/v1/workers endpoint
@@ -306,7 +306,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Implement "Add Worker" button opening a form modal
     - _Requirements: 20_
 
-  - [ ] 23.2 Create add worker form
+  - [x] 23.2 Create add worker form
     - Create web/src/components/AddWorkerForm.tsx
     - Use UX4G form components
     - Include fields: first_name, last_name, phone, email, aadhar_id, address, worker_type, collection_center_id, password
@@ -315,15 +315,15 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Display success message and refresh table
     - _Requirements: 20, 27_
 
-  - [ ] 23.3 Implement worker detail modal
+  - [x] 23.3 Implement worker detail modal
     - Display worker details when row is clicked
     - Use DetailModal component
     - Show all worker fields including meta_data
     - _Requirements: 20_
 
 
-- [ ] 24. Implement Beneficiaries page
-  - [ ] 24.1 Create beneficiaries page
+- [x] 24. Implement Beneficiaries page
+  - [x] 24.1 Create beneficiaries page
     - Create web/src/pages/Beneficiaries.tsx
     - Use DataTable component to display beneficiaries
     - Fetch beneficiaries from GET /api/v1/beneficiaries endpoint
@@ -333,7 +333,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Implement "Add Beneficiary" button opening a form modal
     - _Requirements: 21_
 
-  - [ ] 24.2 Create add beneficiary form
+  - [x] 24.2 Create add beneficiary form
     - Create web/src/components/AddBeneficiaryForm.tsx
     - Use UX4G form components
     - Include fields: first_name, last_name, mcts_id, phone, aadhar_id, address, age, weight, beneficiary_type, assigned_asha_id
@@ -342,7 +342,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Display success message and refresh table
     - _Requirements: 21, 27_
 
-  - [ ] 24.3 Implement beneficiary detail modal
+  - [x] 24.3 Implement beneficiary detail modal
     - Display beneficiary details when row is clicked
     - Use DetailModal component
     - Show all beneficiary fields including meta_data
@@ -358,8 +358,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
 
 ### Day 5: Web Completion + Mobile Auth
 
-- [ ] 26. Implement Visits page
-  - [ ] 26.1 Create visits page
+- [x] 26. Implement Visits page
+  - [x] 26.1 Create visits page
     - Create web/src/pages/Visits.tsx
     - Use DataTable component to display visits
     - Fetch visits from GET /api/v1/visits endpoint (create if not exists)
@@ -369,7 +369,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Implement search by MCTS_ID
     - _Requirements: 22_
 
-  - [ ] 26.2 Create visit detail modal
+  - [x] 26.2 Create visit detail modal
     - Create web/src/components/VisitDetailModal.tsx
     - Display visit header: beneficiary, worker, date, type, day
     - Parse and display visit_data JSON with questions and answers
@@ -377,7 +377,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Use UX4G badge for sync status
     - _Requirements: 22_
 
-- [ ] 27. Implement Sync Logs page
+- [x] 27. Implement Sync Logs page
   - Create web/src/pages/SyncLogs.tsx
   - Use DataTable component to display sync logs
   - Fetch sync logs from GET /api/v1/sync-logs endpoint
@@ -387,7 +387,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Implement filter by date range
   - _Requirements: 23_
 
-- [ ] 28. Implement Data Export page
+- [x] 28. Implement Data Export page
   - Create web/src/pages/DataExport.tsx
   - Create form with fields: visit_type, start_date, end_date, worker_id (optional dropdown)
   - Use UX4G form components and date pickers
@@ -398,7 +398,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Handle error when no visits found
   - _Requirements: 25, 32_
 
-- [ ] 29. Implement Profile page
+- [x] 29. Implement Profile page
   - Create web/src/pages/Profile.tsx
   - Display logged-in user's profile information
   - Show name, worker_id, email, phone, address, profile photo
@@ -406,7 +406,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Use UX4G card components for layout
   - _Requirements: 17_
 
-- [ ] 30. Create ChatDrawer placeholder
+- [x] 30. Create ChatDrawer placeholder
   - Create web/src/components/ChatDrawer.tsx
   - Create a collapsible drawer component using UX4G
   - Display "Coming Soon" message

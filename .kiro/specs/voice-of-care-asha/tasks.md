@@ -387,7 +387,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Implement filter by date range
   - _Requirements: 23_
 
-- [ ] 28. Implement Data Export page
+- [x] 28. Implement Data Export page
   - Create web/src/pages/DataExport.tsx
   - Create form with fields: visit_type, start_date, end_date, worker_id (optional dropdown)
   - Use UX4G form components and date pickers
@@ -398,7 +398,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Handle error when no visits found
   - _Requirements: 25, 32_
 
-- [ ] 29. Implement Profile page
+- [x] 29. Implement Profile page
   - Create web/src/pages/Profile.tsx
   - Display logged-in user's profile information
   - Show name, worker_id, email, phone, address, profile photo
@@ -406,7 +406,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Use UX4G card components for layout
   - _Requirements: 17_
 
-- [ ] 30. Create ChatDrawer placeholder
+- [x] 30. Create ChatDrawer placeholder
   - Create web/src/components/ChatDrawer.tsx
   - Create a collapsible drawer component using UX4G
   - Display "Coming Soon" message

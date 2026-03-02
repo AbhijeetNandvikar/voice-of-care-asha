@@ -4,14 +4,17 @@
  * Uses UX4G Design System styling
  */
 
+import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { getWorkerProfile, logout } from '../services/authService';
+import ChatDrawer from './ChatDrawer';
 import './Layout.css';
 
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const worker = getWorkerProfile();
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -78,10 +81,24 @@ export default function Layout() {
 
       {/* Main content area */}
       <main className="main-content">
+        {/* Header with chat toggle */}
+        <header className="content-header">
+          <button 
+            className="chat-toggle-btn"
+            onClick={() => setIsChatOpen(true)}
+            aria-label="Open AI Assistant"
+          >
+            💬 AI Assistant
+          </button>
+        </header>
+
         <div className="content-wrapper">
           <Outlet />
         </div>
       </main>
+
+      {/* Chat Drawer */}
+      <ChatDrawer isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>
   );
 }

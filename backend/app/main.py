@@ -6,7 +6,11 @@ Configures routes, middleware, and application lifecycle
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
+<<<<<<< HEAD
 from app.routers import auth_router, mobile_router, workers_router, beneficiaries_router, templates_router, sync_router, sync_logs_router, reports_router, dashboard_router,visits_router
+=======
+from app.routers import auth_router, mobile_router, workers_router, beneficiaries_router, templates_router, sync_router, sync_logs_router, reports_router, dashboard_router, visits_router
+>>>>>>> main
 
 # Create FastAPI application instance
 app = FastAPI(
@@ -17,9 +21,12 @@ app = FastAPI(
 )
 
 # Configure CORS middleware
+# Origins are loaded from CORS_ORIGINS env var (comma-separated)
+cors_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,7 +41,6 @@ app.include_router(templates_router)
 app.include_router(sync_router)
 app.include_router(sync_logs_router)
 app.include_router(reports_router)
-app.include_router(dashboard_router)
 app.include_router(dashboard_router)
 app.include_router(visits_router)
 

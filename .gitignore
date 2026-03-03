@@ -1,3 +1,30 @@
+# Environment files (secrets stay local)
+.env
+.env.local
+.env.*.local
+
+
+# IDE
+.vscode/
+.idea/
+
+# Python
+backend/venv/
+backend/.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Node
+web/node_modules/
+web/dist/
+
+# Misc
+.DS_Store
+*.log
 context.md
 .vscode
 .env

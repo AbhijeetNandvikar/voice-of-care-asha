@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     DEBUG: bool = True
 
+    # CORS — comma-separated list of allowed origins
+    # Local dev default covers Vite dev server; override in production .env
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,

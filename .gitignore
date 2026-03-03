@@ -3,3 +3,7 @@ context.md
 .env
 node_modules
 dist
+seed_dummy_data.py
+
+# Kiro steering files
+.kiro/steering/

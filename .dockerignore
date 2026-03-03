@@ -17,9 +17,11 @@ docs/
 # Specs
 .kiro/
 
-# Environment
+# Environment (never bake secrets into images; Dockerfile.nginx injects via build args)
 .env
 .env.*
+web/.env
+web/.env.*
 
 # Logs
 *.log

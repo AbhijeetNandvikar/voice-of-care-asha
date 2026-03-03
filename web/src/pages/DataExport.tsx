@@ -37,9 +37,10 @@ export const DataExport: React.FC = () => {
       const response = await api.get<{ items: Worker[] }>('/workers', {
         params: { page: 1, page_size: 1000 },
       });
-      setWorkers(response.data.items);
+      setWorkers(response.data.items || []);
     } catch (err) {
       console.error('Failed to fetch workers:', err);
+      setWorkers([]);
     }
   };
 

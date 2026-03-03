@@ -57,8 +57,8 @@ export const SyncLogs: React.FC = () => {
       }
 
       const response = await api.get<PaginatedResponse<SyncLog>>('/sync-logs', { params });
-      setSyncLogs(response.data.items);
-      setTotalCount(response.data.total);
+      setSyncLogs(response.data.items || []);
+      setTotalCount(response.data.total_count);
     } catch (error) {
       console.error('Failed to fetch sync logs:', error);
     } finally {

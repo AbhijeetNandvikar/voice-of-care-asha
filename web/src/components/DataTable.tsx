@@ -30,7 +30,7 @@ export interface DataTableProps<T> {
 
 export function DataTable<T extends Record<string, any>>({
   columns,
-  data,
+  data = [],
   totalCount,
   currentPage,
   pageSize,

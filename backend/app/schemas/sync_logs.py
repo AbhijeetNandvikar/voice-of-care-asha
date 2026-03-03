@@ -29,7 +29,7 @@ class SyncLogListResponse(BaseModel):
     """Response schema for paginated sync log list"""
     
     items: List[SyncLogResponse]
-    total: int
+    total_count: int
     page: int
     page_size: int
     total_pages: int

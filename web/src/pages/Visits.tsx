@@ -37,9 +37,10 @@ export const Visits: React.FC = () => {
       const response = await api.get<PaginatedResponse<Worker>>('/workers', {
         params: { page: 1, page_size: 1000 },
       });
-      setWorkers(response.data.items.filter(w => w.worker_type === 'asha_worker'));
+      setWorkers((response.data.items || []).filter(w => w.worker_type === 'asha_worker'));
     } catch (error) {
       console.error('Failed to fetch workers:', error);
+      setWorkers([]);
     }
   };
 
@@ -68,8 +69,8 @@ export const Visits: React.FC = () => {
       }
 
       const response = await api.get<PaginatedResponse<VisitWithDetails>>('/visits', { params });
-      setVisits(response.data.items);
-      setTotalCount(response.data.total);
+      setVisits(response.data.items || []);
+      setTotalCount(response.data.total_count);
     } catch (error) {
       console.error('Failed to fetch visits:', error);
     } finally {

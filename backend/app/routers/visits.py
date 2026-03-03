@@ -98,7 +98,7 @@ async def get_visits(
     
     return {
         "items": items,
-        "total": total,
+        "total_count": total,
         "page": page,
         "page_size": page_size,
         "total_pages": (total + page_size - 1) // page_size

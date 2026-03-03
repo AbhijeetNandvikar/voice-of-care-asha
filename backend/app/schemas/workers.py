@@ -80,7 +80,7 @@ class WorkerResponse(BaseModel):
 
 class WorkerListResponse(BaseModel):
     """Schema for paginated worker list response"""
-    workers: List[WorkerResponse]
+    items: List[WorkerResponse]
     total_count: int
     page: int
     page_size: int

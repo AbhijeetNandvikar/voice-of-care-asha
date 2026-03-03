@@ -79,7 +79,8 @@ class TemplateResponse(BaseModel):
 
 class TemplateListResponse(BaseModel):
     """Schema for paginated template list response"""
-    templates: List[TemplateResponse]
-    total: int
+    items: List[TemplateResponse]
+    total_count: int
     page: int
     page_size: int
+    total_pages: int

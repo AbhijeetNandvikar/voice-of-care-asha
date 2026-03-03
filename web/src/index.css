@@ -1,0 +1,151 @@
+/**
+ * Global Styles
+ * Base styles for the Voice of Care ASHA Dashboard
+ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #333;
+  background-color: #f5f5f5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+h1 {
+  font-size: 2em;
+}
+
+h2 {
+  font-size: 1.5em;
+}
+
+p {
+  margin-bottom: 12px;
+}
+
+/* UX4G overrides and enhancements */
+.ux4g-container {
+  width: 100%;
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.ux4g-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.ux4g-card-header {
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.ux4g-card-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.5em;
+}
+
+.ux4g-card-header p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9em;
+}
+
+.ux4g-card-body {
+  padding: 20px;
+}
+
+.ux4g-form-group {
+  margin-bottom: 20px;
+}
+
+.ux4g-form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+}
+
+.ux4g-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.ux4g-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.ux4g-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.ux4g-btn-primary {
+  background-color: #667eea;
+  color: white;
+}
+
+.ux4g-btn-primary:hover:not(:disabled) {
+  background-color: #5568d3;
+}
+
+.ux4g-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ux4g-alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.ux4g-alert-danger {
+  background-color: #fee;
+  color: #c33;
+  border: 1px solid #fcc;
+}
+

@@ -13,5 +13,15 @@
   "pending_sync": "लंबित सिंक",
   "loading": "लोड हो रहा है...",
   "error": "त्रुटि",
-  "success": "सफलता"
+  "success": "सफलता",
+  "login_success": "लॉगिन सफल!",
+  "login_failed": "लॉगिन विफल",
+  "invalid_credentials": "अमान्य क्रेडेंशियल",
+  "worker_id_required": "कार्यकर्ता आईडी आवश्यक है",
+  "worker_id_format": "कार्यकर्ता आईडी ठीक 8 अंकों की होनी चाहिए",
+  "password_required": "पासवर्ड आवश्यक है",
+  "password_min_length": "पासवर्ड कम से कम 8 वर्णों का होना चाहिए",
+  "enter_worker_id": "8 अंकों की कार्यकर्ता आईडी दर्ज करें",
+  "enter_password": "पासवर्ड दर्ज करें",
+  "contact_medical_officer": "सहायता के लिए, अपने चिकित्सा अधिकारी से संपर्क करें"
 }

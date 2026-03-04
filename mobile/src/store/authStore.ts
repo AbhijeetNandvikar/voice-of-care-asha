@@ -120,6 +120,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
+  // Alias for backward compatibility
+  loadAuth: async () => {
+    await useAuthStore.getState().checkAuth();
+  },
+
   clearError: () => set({ error: null }),
   
   setWorker: (worker: Worker | null) => set({ worker }),

@@ -456,7 +456,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Use axios for API calls to backend
   - _Requirements: 1, 2, 28_
 
-- [ ] 35. Create login screen
+- [x] 35. Create login screen
   - Create mobile/src/screens/LoginScreen.tsx
   - Create form with worker_id and password inputs
   - Call authService.login() on form submission

@@ -13,5 +13,15 @@
   "pending_sync": "Pending Sync",
   "loading": "Loading...",
   "error": "Error",
-  "success": "Success"
+  "success": "Success",
+  "login_success": "Login successful!",
+  "login_failed": "Login Failed",
+  "invalid_credentials": "Invalid credentials",
+  "worker_id_required": "Worker ID is required",
+  "worker_id_format": "Worker ID must be exactly 8 digits",
+  "password_required": "Password is required",
+  "password_min_length": "Password must be at least 8 characters",
+  "enter_worker_id": "Enter 8-digit Worker ID",
+  "enter_password": "Enter password",
+  "contact_medical_officer": "For assistance, contact your medical officer"
 }

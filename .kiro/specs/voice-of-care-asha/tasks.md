@@ -509,7 +509,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
 
 ### Day 6: Mobile Core Flows
 
-- [ ] 39. Set up navigation structure
+- [x] 39. Set up navigation structure
   - Create mobile/src/navigation/AppNavigator.tsx
   - Implement stack navigator for auth screens (Login, MPIN Setup, MPIN Verify, Initialization)
   - Implement bottom tab navigator for main screens (Dashboard, New Visit, Past Visits, Profile)
@@ -518,7 +518,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - _Requirements: 4, 5, 6_
 
 
-- [ ] 40. Create dashboard screen
+- [x] 40. Create dashboard screen
   - Create mobile/src/screens/DashboardScreen.tsx
   - Display welcome message with worker name
   - Query SQLite for pending sync count and display badge
@@ -528,15 +528,15 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Display "Sync All Pending" button if unsynced visits exist
   - _Requirements: 14, 18_
 
-- [ ] 41. Implement visit flow screens
-  - [ ] 41.1 Create visit type selection screen
+- [x] 41. Implement visit flow screens
+  - [x] 41.1 Create visit type selection screen
     - Create mobile/src/screens/VisitTypeScreen.tsx
     - Display buttons for visit types: HBNC, ANC (disabled), PNC (disabled)
     - Note: Only HBNC is supported in v1
     - Navigate to MCTS verification on HBNC selection
     - _Requirements: 4_
 
-  - [ ] 41.2 Create MCTS verification screen
+  - [x] 41.2 Create MCTS verification screen
     - Create mobile/src/screens/MCTSVerifyScreen.tsx
     - Display MCTS ID input field
     - Call databaseService.getBeneficiaryByMCTS() on submission
@@ -545,7 +545,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Navigate to day selection on confirmation
     - _Requirements: 4_
 
-  - [ ] 41.3 Create day selection screen
+  - [x] 41.3 Create day selection screen
     - Create mobile/src/screens/DaySelectScreen.tsx
     - Display day options: 1, 3, 7, 14, 28 for HBNC
     - Query SQLite for previously completed days and highlight in green
@@ -554,8 +554,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Navigate to data collection screen with first question
     - _Requirements: 5_
 
-- [ ] 42. Implement data collection screen
-  - [ ] 42.1 Create data collection screen structure
+- [x] 42. Implement data collection screen
+  - [x] 42.1 Create data collection screen structure
     - Create mobile/src/screens/DataCollectionScreen.tsx
     - Display progress indicator (e.g., "Question 3 of 15")
     - Display question text in selected language (English or Hindi)
@@ -567,20 +567,20 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Implement hamburger menu for question list navigation
     - _Requirements: 6, 7, 8, 9, 10, 11_
 
-  - [ ] 42.2 Implement text-to-speech functionality
+  - [x] 42.2 Implement text-to-speech functionality
     - Use expo-speech to read question text aloud
     - Support both English and Hindi languages
     - Display play/pause button
     - _Requirements: 6_
 
-  - [ ] 42.3 Implement yes/no answer input
+  - [x] 42.3 Implement yes/no answer input
     - Display Yes and No toggle buttons for yes_no questions
     - Save answer to SQLite immediately on selection
     - Allow changing answer
     - Prevent navigation if required question is unanswered
     - _Requirements: 7_
 
-  - [ ] 42.4 Implement numeric answer input
+  - [x] 42.4 Implement numeric answer input
     - Display numeric keyboard input for number questions
     - Validate input is a valid number
     - Save answer to SQLite immediately on entry
@@ -588,7 +588,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Prevent navigation if required question is unanswered
     - _Requirements: 8_
 
-  - [ ] 42.5 Implement voice recording
+  - [x] 42.5 Implement voice recording
     - Display "Hold to Record" button for voice questions
     - Use expo-av to record audio on press and hold
     - Stop recording on release
@@ -606,7 +606,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Test that all required questions have corresponding answers in visit_data
     - Test that answers are persisted immediately to SQLite
 
-- [ ] 43. Create visit summary screen
+- [x] 43. Create visit summary screen
   - Create mobile/src/screens/SummaryScreen.tsx
   - Display all questions and their recorded answers
   - Allow tapping any answer to navigate back to that question for editing
@@ -616,7 +616,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Navigate back to dashboard on successful save
   - _Requirements: 12_
 
-- [ ] 44. Implement past visits screen
+- [x] 44. Implement past visits screen
   - Create mobile/src/screens/PastVisitsScreen.tsx
   - Query SQLite for all visits ordered by date descending
   - Display list with beneficiary name, visit type, day number, date, and sync status badge
@@ -627,7 +627,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - _Requirements: 15_
 
 
-- [ ] 45. Create profile screen
+- [x] 45. Create profile screen
   - Create mobile/src/screens/ProfileScreen.tsx
   - Display worker profile: name, worker_id, email, phone, address, profile photo
   - Display language toggle for English/Hindi selection
@@ -637,7 +637,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Display logout button
   - _Requirements: 16, 17_
 
-- [ ] 46. Set up internationalization (i18n)
+- [x] 46. Set up internationalization (i18n)
   - Create mobile/src/locales/en.json with English translations
   - Create mobile/src/locales/hi.json with Hindi translations
   - Configure react-i18next with language detection and fallback
@@ -657,8 +657,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
 
 ### Day 7: Integration, Sync, and Deployment
 
-- [ ] 48. Implement mobile sync service
-  - [ ] 48.1 Create sync service
+- [x] 48. Implement mobile sync service
+  - [x] 48.1 Create sync service
     - Create mobile/src/services/syncService.ts
     - Implement SyncService class with methods: syncAllPending(), syncVisit(), getPendingSyncCount(), getLastSyncTime()
     - Query SQLite for visits where is_synced = false
@@ -669,7 +669,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Return SyncResult with success count, failed count, and errors
     - _Requirements: 13, 30_
 
-  - [ ] 48.2 Integrate sync into dashboard and past visits
+  - [x] 48.2 Integrate sync into dashboard and past visits
     - Add "Sync All Pending" button handler in DashboardScreen
     - Add "Sync All Pending" button handler in PastVisitsScreen
     - Display loading spinner during sync
@@ -689,14 +689,14 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Test that all audio_s3_key references in visit_data correspond to uploaded S3 files
     - Test that local audio files exist before sync
 
-- [ ] 49. Implement network connectivity detection
+- [x] 49. Implement network connectivity detection
   - Create mobile/src/utils/networkUtils.ts
   - Use NetInfo from @react-native-community/netinfo to detect connectivity
   - Display online/offline indicator in app header
   - Enable/disable sync functionality based on connectivity
   - _Requirements: 31_
 
-- [ ] 50. Create Zustand store for global state
+- [x] 50. Create Zustand store for global state
   - Create mobile/src/store/appStore.ts
   - Define state: currentUser, pendingSyncCount, isOnline, selectedLanguage
   - Define actions: setCurrentUser(), setPendingSyncCount(), setIsOnline(), setSelectedLanguage()

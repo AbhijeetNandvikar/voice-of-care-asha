@@ -10,8 +10,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { verifyMPIN, getStoredWorker } from '../services/authService';
+import { useAuthStore } from '../store/authStore';
+import { AuthScreenProps } from '../navigation/types';
+
+type Props = AuthScreenProps<'MPINVerify'>;
 
 /**
  * MPIN Verification Screen
@@ -19,50 +21,31 @@ import { verifyMPIN, getStoredWorker } from '../services/authService';
  * Tracks failed attempts and redirects to full login after 3 failures
  * Requirements: 2
  */
-const MPINVerifyScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute();
+const MPINVerifyScreen: React.FC<Props> = ({ navigation }) => {
+  const { verifyMPIN, isLoading, worker } = useAuthStore();
   const [mpin, setMpin] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [failedAttempts, setFailedAttempts] = useState(0);
-  const [workerId, setWorkerId] = useState('');
 
   const MAX_ATTEMPTS = 3;
 
   /**
-   * Load worker ID from stored data on mount
+   * Check if worker data exists on mount
    */
   useEffect(() => {
-    loadWorkerData();
-  }, []);
-
-  /**
-   * Load worker data from secure storage
-   */
-  const loadWorkerData = async () => {
-    try {
-      const worker = await getStoredWorker();
-      if (worker?.worker_id) {
-        setWorkerId(worker.worker_id);
-      } else {
-        // If no worker data, redirect to login
-        Alert.alert(
-          'Session Expired',
-          'Please login again.',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.navigate('Login' as never),
-            },
-          ]
-        );
-      }
-    } catch (err) {
-      console.error('Error loading worker data:', err);
-      navigation.navigate('Login' as never);
+    if (!worker) {
+      Alert.alert(
+        'Session Expired',
+        'Please login again.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Login'),
+          },
+        ]
+      );
     }
-  };
+  }, [worker, navigation]);
 
   /**
    * Handle MPIN verification submission
@@ -75,18 +58,16 @@ const MPINVerifyScreen: React.FC = () => {
       return;
     }
 
-    if (!workerId) {
+    if (!worker?.worker_id) {
       setError('Worker ID not found. Please login again.');
       return;
     }
 
-    setLoading(true);
-
     try {
-      await verifyMPIN(workerId, mpin);
+      await verifyMPIN(mpin);
       
-      // Navigate to dashboard on success
-      navigation.navigate('Dashboard' as never);
+      // Navigate to initialization on success
+      navigation.navigate('Initialization');
     } catch (err: any) {
       const newFailedAttempts = failedAttempts + 1;
       setFailedAttempts(newFailedAttempts);
@@ -99,7 +80,7 @@ const MPINVerifyScreen: React.FC = () => {
           [
             {
               text: 'OK',
-              onPress: () => navigation.navigate('Login' as never),
+              onPress: () => navigation.navigate('Login'),
             },
           ]
         );
@@ -112,8 +93,6 @@ const MPINVerifyScreen: React.FC = () => {
         );
         setMpin(''); // Clear MPIN input
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -141,7 +120,7 @@ const MPINVerifyScreen: React.FC = () => {
    * Navigate to full login
    */
   const handleUsePassword = () => {
-    navigation.navigate('Login' as never);
+    navigation.navigate('Login');
   };
 
   return (
@@ -166,7 +145,7 @@ const MPINVerifyScreen: React.FC = () => {
             secureTextEntry
             placeholder="••••"
             placeholderTextColor="#999"
-            editable={!loading && failedAttempts < MAX_ATTEMPTS}
+            editable={!isLoading && failedAttempts < MAX_ATTEMPTS}
             autoFocus
           />
         </View>
@@ -175,7 +154,7 @@ const MPINVerifyScreen: React.FC = () => {
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         {/* Loading Indicator */}
-        {loading && (
+        {isLoading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#007AFF" />
             <Text style={styles.loadingText}>Verifying...</Text>
@@ -186,7 +165,7 @@ const MPINVerifyScreen: React.FC = () => {
         <TouchableOpacity
           style={styles.linkButton}
           onPress={handleUsePassword}
-          disabled={loading}
+          disabled={isLoading}
         >
           <Text style={styles.linkText}>Use Password Instead</Text>
         </TouchableOpacity>

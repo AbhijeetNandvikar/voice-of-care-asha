@@ -1,131 +1,168 @@
 import { create } from 'zustand';
-import { Worker } from '../types';
-import * as authService from '../services/authService';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import * as SecureStore from 'expo-secure-store';
+import { login as apiLogin, setupMPIN as apiSetupMPIN, verifyMPIN as apiVerifyMPIN } from '../services/authService';
+
+interface Worker {
+  id: number;
+  first_name: string;
+  last_name: string;
+  worker_id: string;
+  worker_type: string;
+  email?: string;
+  phone_number?: string;
+  mpin_hash?: string;
+}
 
 interface AuthState {
+  token: string | null;
   worker: Worker | null;
   isAuthenticated: boolean;
+  hasMPIN: boolean;
   isLoading: boolean;
   error: string | null;
   
   // Actions
+  setAuth: (token: string, worker: Worker) => void;
+  setMPINStatus: (hasMPIN: boolean) => void;
   login: (workerId: string, password: string) => Promise<void>;
-  verifyMPIN: (workerId: string, mpin: string) => Promise<void>;
   setupMPIN: (mpin: string) => Promise<void>;
-  logout: () => Promise<void>;
-  checkAuth: () => Promise<void>;
+  verifyMPIN: (mpin: string) => Promise<void>;
+  logout: () => void;
   clearError: () => void;
-  setWorker: (worker: Worker | null) => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  worker: null,
-  isAuthenticated: false,
-  isLoading: false,
-  error: null,
-
-  login: async (workerId: string, password: string) => {
-    set({ isLoading: true, error: null });
+// Custom storage for Zustand using SecureStore
+const secureStorage = {
+  getItem: async (name: string): Promise<string | null> => {
     try {
-      const response = await authService.login(workerId, password);
-      set({ 
-        worker: response.worker, 
-        isAuthenticated: true, 
-        isLoading: false 
-      });
-    } catch (error: any) {
-      set({ 
-        error: error.message, 
-        isLoading: false, 
-        isAuthenticated: false 
-      });
-      throw error;
-    }
-  },
-
-  verifyMPIN: async (workerId: string, mpin: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await authService.verifyMPIN(workerId, mpin);
-      set({ 
-        worker: response.worker, 
-        isAuthenticated: true, 
-        isLoading: false 
-      });
-    } catch (error: any) {
-      set({ 
-        error: error.message, 
-        isLoading: false, 
-        isAuthenticated: false 
-      });
-      throw error;
-    }
-  },
-
-  setupMPIN: async (mpin: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      await authService.setupMPIN(mpin);
-      set({ isLoading: false });
-    } catch (error: any) {
-      set({ 
-        error: error.message, 
-        isLoading: false 
-      });
-      throw error;
-    }
-  },
-
-  logout: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      await authService.logout();
-      set({ 
-        worker: null, 
-        isAuthenticated: false, 
-        isLoading: false 
-      });
-    } catch (error: any) {
-      set({ 
-        error: error.message, 
-        isLoading: false 
-      });
-    }
-  },
-
-  checkAuth: async () => {
-    set({ isLoading: true });
-    try {
-      const isAuth = await authService.isAuthenticated();
-      if (isAuth) {
-        const worker = await authService.getStoredWorker();
-        set({ 
-          worker, 
-          isAuthenticated: true, 
-          isLoading: false 
-        });
-      } else {
-        set({ 
-          worker: null, 
-          isAuthenticated: false, 
-          isLoading: false 
-        });
-      }
+      return await SecureStore.getItemAsync(name);
     } catch (error) {
-      set({ 
-        worker: null, 
-        isAuthenticated: false, 
-        isLoading: false 
-      });
+      console.error('Error reading from SecureStore:', error);
+      return null;
     }
   },
-
-  // Alias for backward compatibility
-  loadAuth: async () => {
-    await useAuthStore.getState().checkAuth();
+  setItem: async (name: string, value: string): Promise<void> => {
+    try {
+      await SecureStore.setItemAsync(name, value);
+    } catch (error) {
+      console.error('Error writing to SecureStore:', error);
+    }
   },
+  removeItem: async (name: string): Promise<void> => {
+    try {
+      await SecureStore.deleteItemAsync(name);
+    } catch (error) {
+      console.error('Error removing from SecureStore:', error);
+    }
+  },
+};
 
-  clearError: () => set({ error: null }),
-  
-  setWorker: (worker: Worker | null) => set({ worker }),
-}));
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      token: null,
+      worker: null,
+      isAuthenticated: false,
+      hasMPIN: false,
+      isLoading: false,
+      error: null,
+
+      setAuth: (token: string, worker: Worker) => {
+        set({
+          token,
+          worker,
+          isAuthenticated: true,
+          hasMPIN: !!worker.mpin_hash,
+          error: null,
+        });
+      },
+
+      setMPINStatus: (hasMPIN: boolean) => {
+        set({ hasMPIN });
+      },
+
+      login: async (workerId: string, password: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await apiLogin(workerId, password);
+          set({
+            token: response.access_token,
+            worker: response.worker,
+            isAuthenticated: true,
+            hasMPIN: !!response.worker.mpin_hash,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error: any) {
+          set({
+            isLoading: false,
+            error: error.message || 'Login failed',
+          });
+          throw error;
+        }
+      },
+
+      setupMPIN: async (mpin: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          await apiSetupMPIN(mpin);
+          const worker = get().worker;
+          if (worker) {
+            set({
+              worker: { ...worker, mpin_hash: 'set' },
+              hasMPIN: true,
+              isLoading: false,
+              error: null,
+            });
+          }
+        } catch (error: any) {
+          set({
+            isLoading: false,
+            error: error.message || 'MPIN setup failed',
+          });
+          throw error;
+        }
+      },
+
+      verifyMPIN: async (mpin: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await apiVerifyMPIN(mpin);
+          set({
+            token: response.access_token,
+            worker: response.worker,
+            isAuthenticated: true,
+            hasMPIN: true,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error: any) {
+          set({
+            isLoading: false,
+            error: error.message || 'MPIN verification failed',
+          });
+          throw error;
+        }
+      },
+
+      logout: () => {
+        set({
+          token: null,
+          worker: null,
+          isAuthenticated: false,
+          hasMPIN: false,
+          error: null,
+        });
+      },
+
+      clearError: () => {
+        set({ error: null });
+      },
+    }),
+    {
+      name: 'auth-storage',
+      storage: createJSONStorage(() => secureStorage),
+    }
+  )
+);

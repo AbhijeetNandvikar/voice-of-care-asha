@@ -10,19 +10,20 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { setupMPIN } from '../services/authService';
+import { useAuthStore } from '../store/authStore';
+import { AuthScreenProps } from '../navigation/types';
+
+type Props = AuthScreenProps<'MPINSetup'>;
 
 /**
  * MPIN Setup Screen
  * Allows first-time users to set up a 4-digit MPIN for quick authentication
  * Requirements: 2
  */
-const MPINSetupScreen: React.FC = () => {
-  const navigation = useNavigation();
+const MPINSetupScreen: React.FC<Props> = ({ navigation }) => {
+  const { setupMPIN, isLoading } = useAuthStore();
   const [mpin, setMpin] = useState('');
   const [confirmMpin, setConfirmMpin] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   /**
@@ -50,8 +51,6 @@ const MPINSetupScreen: React.FC = () => {
       return;
     }
 
-    setLoading(true);
-
     try {
       await setupMPIN(mpin);
       
@@ -63,15 +62,13 @@ const MPINSetupScreen: React.FC = () => {
             text: 'Continue',
             onPress: () => {
               // Navigate to initialization flow
-              navigation.navigate('Initialization' as never);
+              navigation.navigate('Initialization');
             },
           },
         ]
       );
     } catch (err: any) {
       setError(err.message || 'Failed to setup MPIN. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -122,7 +119,7 @@ const MPINSetupScreen: React.FC = () => {
             secureTextEntry
             placeholder="Enter 4-digit MPIN"
             placeholderTextColor="#999"
-            editable={!loading}
+            editable={!isLoading}
           />
         </View>
 
@@ -138,7 +135,7 @@ const MPINSetupScreen: React.FC = () => {
             secureTextEntry
             placeholder="Re-enter 4-digit MPIN"
             placeholderTextColor="#999"
-            editable={!loading}
+            editable={!isLoading}
           />
         </View>
 
@@ -147,11 +144,11 @@ const MPINSetupScreen: React.FC = () => {
 
         {/* Setup Button */}
         <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+          style={[styles.button, isLoading && styles.buttonDisabled]}
           onPress={handleSetupMpin}
-          disabled={loading || !mpin || !confirmMpin}
+          disabled={isLoading || !mpin || !confirmMpin}
         >
-          {loading ? (
+          {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.buttonText}>Setup MPIN</Text>

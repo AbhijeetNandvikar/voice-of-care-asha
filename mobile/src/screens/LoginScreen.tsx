@@ -13,12 +13,11 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/authStore';
+import { AuthScreenProps } from '../navigation/types';
 
-interface LoginScreenProps {
-  navigation: any; // Will be properly typed when navigation is set up
-}
+type Props = AuthScreenProps<'Login'>;
 
-export default function LoginScreen({ navigation }: LoginScreenProps) {
+export default function LoginScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const { login, isLoading, error, clearError } = useAuthStore();
 
@@ -68,14 +67,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       const worker = useAuthStore.getState().worker;
       
       if (worker?.mpin_hash) {
-        // MPIN already set up, navigate to MPIN verification for subsequent logins
-        // For now, we'll navigate to initialization or dashboard
-        // This will be updated when MPIN screens are implemented
-        Alert.alert('Success', 'Login successful! MPIN verification will be implemented next.');
+        // MPIN already set up, navigate to MPIN verification
+        navigation.navigate('MPINVerify');
       } else {
         // First-time login, navigate to MPIN setup
-        Alert.alert('Success', 'Login successful! Please set up your MPIN.');
-        // navigation.navigate('MPINSetup');
+        navigation.navigate('MPINSetup');
       }
     } catch (err: any) {
       // Error is already set in the store

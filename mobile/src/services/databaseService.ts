@@ -407,6 +407,51 @@ class DatabaseService {
     });
   }
 
+  /**
+   * Get visits for today for a specific beneficiary
+   */
+  getTodaysVisitsForBeneficiary(beneficiaryId: number): Promise<Visit[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.toISOString();
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const todayEnd = tomorrow.toISOString();
+
+    return this.getVisits({
+      beneficiary_id: beneficiaryId,
+      start_date: todayStart,
+      end_date: todayEnd,
+    });
+  }
+
+  /**
+   * Update an existing visit
+   */
+  updateVisit(visitId: number, visitData: VisitData): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const now = new Date().toISOString();
+      
+      db.transaction(
+        (tx) => {
+          tx.executeSql(
+            'UPDATE visits SET visit_data = ?, updated_at = ? WHERE id = ?',
+            [JSON.stringify(visitData), now, visitId],
+            () => {
+              resolve();
+            },
+            (_, error) => {
+              console.error('Error updating visit:', error);
+              reject(error);
+              return false;
+            }
+          );
+        }
+      );
+    });
+  }
+
   // Helper methods for parsing database rows
 
   private parseWorker(row: WorkerRow): Worker {

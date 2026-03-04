@@ -7,18 +7,18 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { initializeApp } from '../services/initService';
 import { InitData } from '../types';
+import { AuthScreenProps } from '../navigation/types';
+
+type Props = AuthScreenProps<'Initialization'>;
 
 /**
  * InitializationScreen
  * Displays loading state while fetching and seeding initial data
  * Shown after first login and MPIN setup
  */
-const InitializationScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const [loading, setLoading] = useState(true);
+const InitializationScreen: React.FC<Props> = ({ navigation }) => {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string>('Connecting to server...');
   const [initData, setInitData] = useState<InitData | null>(null);
@@ -29,7 +29,6 @@ const InitializationScreen: React.FC = () => {
 
   const performInitialization = async () => {
     try {
-      setLoading(true);
       setError(null);
       setProgress('Connecting to server...');
 
@@ -45,16 +44,15 @@ const InitializationScreen: React.FC = () => {
       
       setProgress('Initialization complete!');
       
-      // Navigate to dashboard
+      // Navigate to main app (will be handled by RootNavigator based on auth state)
+      // The auth state is already set, so navigation will automatically switch to Main
       setTimeout(() => {
-        // @ts-ignore - navigation will be properly typed in navigation setup
-        navigation.replace('Dashboard');
+        // No need to navigate - the RootNavigator will handle this based on isAuthenticated
       }, 500);
       
     } catch (err: any) {
       console.error('Initialization error:', err);
       setError(err.message || 'Initialization failed. Please try again.');
-      setLoading(false);
     }
   };
 
@@ -73,8 +71,7 @@ const InitializationScreen: React.FC = () => {
           text: 'Logout',
           style: 'destructive',
           onPress: () => {
-            // @ts-ignore - navigation will be properly typed in navigation setup
-            navigation.replace('Login');
+            navigation.navigate('Login');
           },
         },
       ]

@@ -466,8 +466,8 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Use React Native TextInput and Button components
   - _Requirements: 1_
 
-- [ ] 36. Create MPIN setup and verification screens
-  - [ ] 36.1 Create MPIN setup screen
+- [x] 36. Create MPIN setup and verification screens
+  - [x] 36.1 Create MPIN setup screen
     - Create mobile/src/screens/MPINSetupScreen.tsx
     - Display 4-digit PIN input with confirmation
     - Validate both entries match
@@ -475,7 +475,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Navigate to initialization flow on success
     - _Requirements: 2_
 
-  - [ ] 36.2 Create MPIN verification screen
+  - [x] 36.2 Create MPIN verification screen
     - Create mobile/src/screens/MPINVerifyScreen.tsx
     - Display 4-digit PIN input
     - Call authService.verifyMPIN() on submission

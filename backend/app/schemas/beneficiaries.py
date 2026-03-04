@@ -84,7 +84,7 @@ class BeneficiaryResponse(BaseModel):
 
 class BeneficiaryListResponse(BaseModel):
     """Schema for paginated beneficiary list response"""
-    beneficiaries: List[BeneficiaryResponse]
+    items: List[BeneficiaryResponse]
     total_count: int
     page: int
     page_size: int

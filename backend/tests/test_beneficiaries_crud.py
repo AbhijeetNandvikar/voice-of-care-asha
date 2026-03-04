@@ -194,7 +194,7 @@ class TestListBeneficiaries:
         assert "total_pages" in data
         assert data["page"] == 1
         assert data["page_size"] == 20
-        assert len(data["beneficiaries"]) >= 1
+        assert len(data["items"]) >= 1
     
     def test_list_beneficiaries_with_custom_pagination(self, client, test_worker):
         """Test listing beneficiaries with custom page size"""
@@ -237,8 +237,8 @@ class TestListBeneficiaries:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         
-        assert len(data["beneficiaries"]) >= 1
-        assert any(b["first_name"] == test_beneficiary.first_name for b in data["beneficiaries"])
+        assert len(data["items"]) >= 1
+        assert any(b["first_name"] == test_beneficiary.first_name for b in data["items"])
     
     def test_list_beneficiaries_search_by_mcts_id(self, client, test_worker, test_beneficiary):
         """Test searching beneficiaries by MCTS ID"""
@@ -259,8 +259,8 @@ class TestListBeneficiaries:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         
-        assert len(data["beneficiaries"]) >= 1
-        assert any(b["mcts_id"] == test_beneficiary.mcts_id for b in data["beneficiaries"])
+        assert len(data["items"]) >= 1
+        assert any(b["mcts_id"] == test_beneficiary.mcts_id for b in data["items"])
     
     def test_list_beneficiaries_filter_by_type(self, client, test_worker, test_beneficiary):
         """Test filtering beneficiaries by beneficiary_type"""
@@ -281,7 +281,7 @@ class TestListBeneficiaries:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         
-        assert all(b["beneficiary_type"] == test_beneficiary.beneficiary_type for b in data["beneficiaries"])
+        assert all(b["beneficiary_type"] == test_beneficiary.beneficiary_type for b in data["items"])
     
     def test_list_beneficiaries_filter_by_invalid_type(self, client, test_worker):
         """Test filtering beneficiaries by invalid beneficiary_type"""

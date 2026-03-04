@@ -26,5 +26,11 @@ web/dist/
 .DS_Store
 *.log
 context.md
+.vscode
+.env
+node_modules
+dist
 seed_dummy_data.py
 
+# Kiro steering files
+.kiro/steering/

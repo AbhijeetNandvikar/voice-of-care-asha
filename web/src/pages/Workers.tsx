@@ -244,8 +244,8 @@ export const Workers: React.FC = () => {
       }
 
       const response = await api.get<PaginatedResponse<Worker>>('/workers', { params });
-      setWorkers(response.data.items);
-      setTotalCount(response.data.total);
+      setWorkers(response.data.items || []);
+      setTotalCount(response.data.total_count);
     } catch (error) {
       console.error('Failed to fetch workers:', error);
     } finally {

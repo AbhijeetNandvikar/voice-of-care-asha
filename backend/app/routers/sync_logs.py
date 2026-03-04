@@ -115,7 +115,7 @@ def get_sync_logs(
     
     return SyncLogListResponse(
         items=items,
-        total=total,
+        total_count=total,
         page=page,
         page_size=page_size,
         total_pages=total_pages

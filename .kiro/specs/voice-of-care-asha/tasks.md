@@ -484,14 +484,14 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Navigate to dashboard on success
     - _Requirements: 2_
 
-- [ ] 37. Implement first-login initialization flow
-  - [ ] 37.1 Create initialization service
+- [x] 37. Implement first-login initialization flow
+  - [x] 37.1 Create initialization service
     - Create mobile/src/services/initService.ts
     - Implement fetchInitData() function calling GET /api/v1/mobile/init
     - Implement seedDatabase() function to populate SQLite with worker, beneficiaries, and templates
     - _Requirements: 3_
 
-  - [ ] 37.2 Create initialization screen
+  - [x] 37.2 Create initialization screen
     - Create mobile/src/screens/InitializationScreen.tsx
     - Display loading spinner and progress message
     - Call initService.fetchInitData() and seedDatabase()

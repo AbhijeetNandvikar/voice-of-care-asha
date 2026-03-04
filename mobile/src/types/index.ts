@@ -10,6 +10,7 @@ export interface Worker {
   address?: string;
   worker_id: string;
   worker_type: string;
+  mpin_hash?: string | null;
   profile_photo_url?: string;
   collection_center_id?: number;
   meta_data?: Record<string, any>;

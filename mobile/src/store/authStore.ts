@@ -1,49 +1,126 @@
 import { create } from 'zustand';
-import * as SecureStore from 'expo-secure-store';
 import { Worker } from '../types';
+import * as authService from '../services/authService';
 
 interface AuthState {
-  token: string | null;
   worker: Worker | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  setAuth: (token: string, worker: Worker) => Promise<void>;
-  clearAuth: () => Promise<void>;
-  loadAuth: () => Promise<void>;
+  error: string | null;
+  
+  // Actions
+  login: (workerId: string, password: string) => Promise<void>;
+  verifyMPIN: (workerId: string, mpin: string) => Promise<void>;
+  setupMPIN: (mpin: string) => Promise<void>;
+  logout: () => Promise<void>;
+  checkAuth: () => Promise<void>;
+  clearError: () => void;
+  setWorker: (worker: Worker | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  token: null,
   worker: null,
   isAuthenticated: false,
-  isLoading: true,
+  isLoading: false,
+  error: null,
 
-  setAuth: async (token: string, worker: Worker) => {
-    await SecureStore.setItemAsync('auth_token', token);
-    await SecureStore.setItemAsync('worker_data', JSON.stringify(worker));
-    set({ token, worker, isAuthenticated: true });
-  },
-
-  clearAuth: async () => {
-    await SecureStore.deleteItemAsync('auth_token');
-    await SecureStore.deleteItemAsync('worker_data');
-    set({ token: null, worker: null, isAuthenticated: false });
-  },
-
-  loadAuth: async () => {
+  login: async (workerId: string, password: string) => {
+    set({ isLoading: true, error: null });
     try {
-      const token = await SecureStore.getItemAsync('auth_token');
-      const workerData = await SecureStore.getItemAsync('worker_data');
-      
-      if (token && workerData) {
-        const worker = JSON.parse(workerData);
-        set({ token, worker, isAuthenticated: true, isLoading: false });
-      } else {
-        set({ isLoading: false });
-      }
-    } catch (error) {
-      console.error('Error loading auth:', error);
-      set({ isLoading: false });
+      const response = await authService.login(workerId, password);
+      set({ 
+        worker: response.worker, 
+        isAuthenticated: true, 
+        isLoading: false 
+      });
+    } catch (error: any) {
+      set({ 
+        error: error.message, 
+        isLoading: false, 
+        isAuthenticated: false 
+      });
+      throw error;
     }
   },
+
+  verifyMPIN: async (workerId: string, mpin: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await authService.verifyMPIN(workerId, mpin);
+      set({ 
+        worker: response.worker, 
+        isAuthenticated: true, 
+        isLoading: false 
+      });
+    } catch (error: any) {
+      set({ 
+        error: error.message, 
+        isLoading: false, 
+        isAuthenticated: false 
+      });
+      throw error;
+    }
+  },
+
+  setupMPIN: async (mpin: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await authService.setupMPIN(mpin);
+      set({ isLoading: false });
+    } catch (error: any) {
+      set({ 
+        error: error.message, 
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  logout: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      await authService.logout();
+      set({ 
+        worker: null, 
+        isAuthenticated: false, 
+        isLoading: false 
+      });
+    } catch (error: any) {
+      set({ 
+        error: error.message, 
+        isLoading: false 
+      });
+    }
+  },
+
+  checkAuth: async () => {
+    set({ isLoading: true });
+    try {
+      const isAuth = await authService.isAuthenticated();
+      if (isAuth) {
+        const worker = await authService.getStoredWorker();
+        set({ 
+          worker, 
+          isAuthenticated: true, 
+          isLoading: false 
+        });
+      } else {
+        set({ 
+          worker: null, 
+          isAuthenticated: false, 
+          isLoading: false 
+        });
+      }
+    } catch (error) {
+      set({ 
+        worker: null, 
+        isAuthenticated: false, 
+        isLoading: false 
+      });
+    }
+  },
+
+  clearError: () => set({ error: null }),
+  
+  setWorker: (worker: Worker | null) => set({ worker }),
 }));

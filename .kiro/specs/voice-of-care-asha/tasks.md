@@ -449,7 +449,7 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
     - Test that all visits have valid beneficiary_id and assigned_asha_id
     - Test that beneficiary's assigned_asha_id matches visit's assigned_asha_id
 
-- [ ] 34. Implement mobile authentication service
+- [x] 34. Implement mobile authentication service
   - Create mobile/src/services/authService.ts
   - Implement functions: login(), setupMPIN(), verifyMPIN(), logout(), getStoredToken()
   - Use expo-secure-store to store JWT token securely

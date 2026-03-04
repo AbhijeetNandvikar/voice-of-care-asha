@@ -422,22 +422,22 @@ The implementation prioritizes core functionality for HBNC visits, offline-first
   - Ensure all tests pass, ask the user if questions arise
 
 
-- [ ] 32. Initialize Expo React Native mobile application
+- [x] 32. Initialize Expo React Native mobile application
   - Create mobile/ directory and initialize Expo TypeScript project with `npx create-expo-app`
   - Install dependencies: expo-av, expo-sqlite, expo-secure-store, expo-speech, @react-navigation/native, @react-navigation/stack, @react-navigation/bottom-tabs, zustand, axios, react-i18next, i18next
   - Create mobile/src/ structure with components/, screens/, services/, store/, types/, utils/, locales/
   - Configure TypeScript with strict mode
   - _Requirements: 31_
 
-- [ ] 33. Set up SQLite database for offline storage
-  - [ ] 33.1 Create database schema
+- [x] 33. Set up SQLite database for offline storage
+  - [x] 33.1 Create database schema
     - Create mobile/src/services/database.ts
     - Define SQLite schema for tables: workers, beneficiaries, templates, visits
     - Implement initialize() function to create tables with foreign key constraints
     - Create indexes on mcts_id, is_synced, beneficiary_id for performance
     - _Requirements: 3, 31_
 
-  - [ ] 33.2 Implement database service
+  - [x] 33.2 Implement database service
     - Implement DatabaseService class with methods: seedFromServer(), getWorker(), getBeneficiaries(), getBeneficiaryByMCTS(), getTemplate(), createVisit(), getVisits(), updateVisitSyncStatus(), getPendingVisits()
     - Use expo-sqlite for database operations
     - Handle JSON serialization for JSONB-like fields

@@ -1,0 +1,17 @@
+{
+  "welcome": "Welcome to Voice of Care",
+  "login": "Login",
+  "logout": "Logout",
+  "worker_id": "Worker ID",
+  "password": "Password",
+  "mpin": "MPIN",
+  "dashboard": "Dashboard",
+  "new_visit": "New Visit",
+  "past_visits": "Past Visits",
+  "profile": "Profile",
+  "sync": "Sync",
+  "pending_sync": "Pending Sync",
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success"
+}

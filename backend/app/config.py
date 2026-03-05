@@ -8,7 +8,7 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables"""
+    """Application settings lo  aded from environment variables"""
 
     # Database Configuration
     DATABASE_URL: str
@@ -24,9 +24,8 @@ class Settings(BaseSettings):
     AWS_REGION: str = "ap-south-1"
     AWS_S3_BUCKET_AUDIO: str
     AWS_S3_BUCKET_REPORTS: str
-    # Bedrock model ID - for ap-south-1, use the direct model ID
-    # Cross-region inference profiles are only available in us-east-1, us-west-2, eu-central-1
-    AWS_BEDROCK_MODEL_ID: str = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+    # Bedrock model ID - Claude 3 Sonnet for ap-south-1
+    AWS_BEDROCK_MODEL_ID: str = "anthropic.claude-3-sonnet-20240229-v1:0"
     
     # Application Configuration
     APP_ENV: str = "development"

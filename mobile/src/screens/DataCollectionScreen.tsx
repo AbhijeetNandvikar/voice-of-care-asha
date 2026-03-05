@@ -333,7 +333,7 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
 
       // Save audio file to permanent location
       const question = template.questions[currentQuestionIndex];
-      const audioDir = `${FileSystem.documentDirectory}audio/visit_${visitId}`;
+      const audioDir = `${FileSystem.documentDirectory}audio/draft_${beneficiaryId}_${dayNumber}`;
       
       // Create directory if it doesn't exist
       const dirInfo = await FileSystem.getInfoAsync(audioDir);

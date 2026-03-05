@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../services/authService';
+import { login, logout } from '../services/authService';
 
 export default function Login() {
   const [workerId, setWorkerId] = useState('');
@@ -24,6 +24,7 @@ export default function Login() {
       
       // Check if user is medical officer
       if (response.worker.worker_type !== 'medical_officer') {
+        logout(); // Clear the token stored by login()
         setError('Access denied. Only medical officers can access the web dashboard.');
         setLoading(false);
         return;

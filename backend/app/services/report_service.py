@@ -5,7 +5,7 @@ Handles AI-powered Excel report generation using Claude and openpyxl
 
 import logging
 from typing import List, Dict, Any, Optional
-from datetime import date, datetime, UTC
+from datetime import date, datetime, time, UTC
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 import uuid
@@ -149,8 +149,8 @@ class ReportService:
         ).filter(
             and_(
                 Visit.visit_type == visit_type,
-                Visit.visit_date_time >= start_date,
-                Visit.visit_date_time <= end_date,
+                Visit.visit_date_time >= datetime.combine(start_date, time.min),
+                Visit.visit_date_time <= datetime.combine(end_date, time.max),
                 Visit.is_synced == True
             )
         )

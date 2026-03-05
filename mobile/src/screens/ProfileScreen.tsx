@@ -139,7 +139,7 @@ export default function ProfileScreen() {
               console.log('[ProfileScreen] Local data cleared');
               
               // Re-initialize from server
-              await initService.initialize();
+              await initService.initializeApp();
               console.log('[ProfileScreen] Re-initialization complete');
               
               Alert.alert('Success', 'Data cleared and re-synced successfully!');

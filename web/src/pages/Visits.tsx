@@ -93,7 +93,6 @@ export const Visits: React.FC = () => {
 
   const handleFilterChange = () => {
     setCurrentPage(1);
-    fetchVisits();
   };
 
   const columns: Column<VisitWithDetails>[] = [

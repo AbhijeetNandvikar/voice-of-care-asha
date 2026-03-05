@@ -77,7 +77,6 @@ export const SyncLogs: React.FC = () => {
 
   const handleFilterChange = () => {
     setCurrentPage(1);
-    fetchSyncLogs();
   };
 
   const getStatusBadgeClass = (status: string): string => {

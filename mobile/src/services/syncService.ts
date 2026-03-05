@@ -26,7 +26,7 @@ interface SyncResponse {
   synced_visit_ids: number[];
   failed_visits: Array<{
     local_id: number;
-    error: string;
+    error_message: string;
   }>;
   message: string;
 }
@@ -93,6 +93,7 @@ class SyncService {
           return {
             local_id: visit.id,
             visit_type: visit.visit_type,
+            assigned_asha_id: visit.assigned_asha_id,
             day_number: visit.day_number,
             visit_date_time: visit.visit_date_time,
             beneficiary_id: visit.beneficiary_id,
@@ -148,20 +149,22 @@ class SyncService {
       // Process response
       const { synced_visit_ids, failed_visits } = response.data;
 
-      // Update local database for successfully synced visits
-      for (let i = 0; i < synced_visit_ids.length; i++) {
+      // Build set of failed local IDs
+      const failedLocalIds = new Set(failed_visits.map((f) => f.local_id));
+
+      // Map successfully synced pending visits to their server IDs (in order)
+      const succeededVisits = pendingVisits.filter((v) => !failedLocalIds.has(v.id));
+      for (let i = 0; i < succeededVisits.length; i++) {
         const serverId = synced_visit_ids[i];
-        const localVisit = pendingVisits[i];
-        
-        if (localVisit) {
-          await databaseService.updateVisitSyncStatus(localVisit.id, serverId);
+        if (serverId !== undefined) {
+          await databaseService.updateVisitSyncStatus(succeededVisits[i].id, serverId);
         }
       }
 
       // Build error list for failed visits
       const errors: SyncError[] = failed_visits.map((failure) => ({
         visitId: failure.local_id,
-        message: failure.error,
+        message: failure.error_message,
       }));
 
       console.log(
@@ -252,6 +255,7 @@ class SyncService {
       const visitData = {
         local_id: visit.id,
         visit_type: visit.visit_type,
+        assigned_asha_id: visit.assigned_asha_id,
         day_number: visit.day_number,
         visit_date_time: visit.visit_date_time,
         beneficiary_id: visit.beneficiary_id,

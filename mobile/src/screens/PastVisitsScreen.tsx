@@ -16,6 +16,7 @@ import { useAuthStore } from '../store/authStore';
 import databaseService from '../services/databaseService';
 import syncService from '../services/syncService';
 import { Visit, Beneficiary } from '../types';
+import { useNetworkStatus } from '../utils/networkUtils';
 
 interface VisitWithBeneficiary extends Visit {
   beneficiary?: Beneficiary;
@@ -26,6 +27,7 @@ type FilterPeriod = 'all' | 'week' | 'month';
 export default function PastVisitsScreen() {
   const { t } = useTranslation();
   const { worker } = useAuthStore();
+  const { isOnline } = useNetworkStatus();
 
   const [visits, setVisits] = useState<VisitWithBeneficiary[]>([]);
   const [filteredVisits, setFilteredVisits] = useState<VisitWithBeneficiary[]>([]);

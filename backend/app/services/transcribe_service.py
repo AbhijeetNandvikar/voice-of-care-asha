@@ -4,6 +4,7 @@ Handles audio transcription using AWS Transcribe
 """
 
 import boto3
+import json
 from botocore.exceptions import ClientError, BotoCoreError
 from typing import Optional
 import logging
@@ -21,6 +22,12 @@ class TranscribeService:
         try:
             self.transcribe_client = boto3.client(
                 'transcribe',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_REGION
+            )
+            self.s3_client = boto3.client(
+                's3',
                 aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                 aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
                 region_name=settings.AWS_REGION
@@ -69,8 +76,7 @@ class TranscribeService:
                 LanguageCode=language_code,
                 OutputBucketName=settings.AWS_S3_BUCKET_AUDIO,
                 Settings={
-                    'ShowSpeakerLabels': False,
-                    'MaxSpeakerLabels': 1
+                    'ShowSpeakerLabels': False
                 }
             )
             
@@ -126,17 +132,16 @@ class TranscribeService:
             status = job['TranscriptionJobStatus']
             
             if status == 'COMPLETED':
-                # Get the transcript file URL
-                transcript_uri = job['Transcript']['TranscriptFileUri']
-                
-                # Download and parse the transcript
-                import requests
-                transcript_response = requests.get(transcript_uri)
-                transcript_response.raise_for_status()
-                
-                transcript_data = transcript_response.json()
+                # Download transcript JSON from S3.
+                # AWS Transcribe stores the output as {job_name}.json in OutputBucketName.
+                transcript_s3_key = f"{job_name}.json"
+                s3_response = self.s3_client.get_object(
+                    Bucket=settings.AWS_S3_BUCKET_AUDIO,
+                    Key=transcript_s3_key
+                )
+                transcript_data = json.loads(s3_response['Body'].read().decode('utf-8'))
                 transcript_text = transcript_data['results']['transcripts'][0]['transcript']
-                
+
                 logger.info(f"Retrieved transcript for job '{job_name}'")
                 return transcript_text
                 

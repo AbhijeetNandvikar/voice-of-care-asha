@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './DataTable.css';
 
 export interface Column<T> {
@@ -44,7 +44,7 @@ export function DataTable<T extends Record<string, any>>({
   filters = [],
 }: DataTableProps<T>) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchDebounceTimer, setSearchDebounceTimer] = useState<number | null>(null);
+  const debounceTimerRef = useRef<number | null>(null);
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
 
   // Debounced search handler
@@ -52,27 +52,25 @@ export function DataTable<T extends Record<string, any>>({
     (value: string) => {
       setSearchQuery(value);
 
-      if (searchDebounceTimer) {
-        clearTimeout(searchDebounceTimer);
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
       }
 
-      const timer = window.setTimeout(() => {
+      debounceTimerRef.current = window.setTimeout(() => {
         onSearch(value);
       }, 300);
-
-      setSearchDebounceTimer(timer);
     },
-    [onSearch, searchDebounceTimer]
+    [onSearch]
   );
 
   // Cleanup timer on unmount
   useEffect(() => {
     return () => {
-      if (searchDebounceTimer) {
-        clearTimeout(searchDebounceTimer);
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [searchDebounceTimer]);
+  }, []);
 
   // Handle filter change
   const handleFilterChange = (filterKey: string, value: string) => {

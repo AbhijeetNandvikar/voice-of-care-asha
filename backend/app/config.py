@@ -24,7 +24,9 @@ class Settings(BaseSettings):
     AWS_REGION: str = "ap-south-1"
     AWS_S3_BUCKET_AUDIO: str
     AWS_S3_BUCKET_REPORTS: str
-    AWS_BEDROCK_MODEL_ID: str = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
+    # Bedrock model ID - for ap-south-1, use the direct model ID
+    # Cross-region inference profiles are only available in us-east-1, us-west-2, eu-central-1
+    AWS_BEDROCK_MODEL_ID: str = "anthropic.claude-3-5-sonnet-20241022-v2:0"
     
     # Application Configuration
     APP_ENV: str = "development"

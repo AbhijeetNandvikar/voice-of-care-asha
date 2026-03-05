@@ -20,18 +20,20 @@ class TranscribeService:
     def __init__(self):
         """Initialize Transcribe client with credentials from settings"""
         try:
-            self.transcribe_client = boto3.client(
-                'transcribe',
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                region_name=settings.AWS_REGION
-            )
-            self.s3_client = boto3.client(
-                's3',
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                region_name=settings.AWS_REGION
-            )
+            # Build client config - use IAM role if credentials not provided
+            client_config = {'region_name': settings.AWS_REGION}
+            
+            # Only add credentials if explicitly provided (otherwise use IAM role)
+            if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+                client_config['aws_access_key_id'] = settings.AWS_ACCESS_KEY_ID
+                client_config['aws_secret_access_key'] = settings.AWS_SECRET_ACCESS_KEY
+                logger.info("Using explicit AWS credentials for Transcribe")
+            else:
+                logger.info("Using IAM role for Transcribe authentication")
+            
+            self.transcribe_client = boto3.client('transcribe', **client_config)
+            self.s3_client = boto3.client('s3', **client_config)
+            
             logger.info(f"Transcribe client initialized for region {settings.AWS_REGION}")
         except Exception as e:
             logger.error(f"Failed to initialize Transcribe client: {str(e)}")

@@ -16,19 +16,32 @@ logger = logging.getLogger(__name__)
 class BedrockService:
     """Service for AWS Bedrock operations with Claude"""
     
-    # Claude 3.5 Sonnet model ID
-    MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
-    
     def __init__(self):
         """Initialize Bedrock Runtime client with credentials from settings"""
+        # Use inference profile from settings (supports cross-region on-demand throughput)
+        self.model_id = settings.AWS_BEDROCK_MODEL_ID
+        
         try:
-            self.bedrock_client = boto3.client(
-                'bedrock-runtime',
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                region_name=settings.AWS_REGION
+            # Build client config - use IAM role if credentials not provided
+            client_config = {
+                'service_name': 'bedrock-runtime',
+                'region_name': settings.AWS_REGION
+            }
+            
+            # Only add credentials if explicitly provided (otherwise use IAM role)
+            if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+                client_config['aws_access_key_id'] = settings.AWS_ACCESS_KEY_ID
+                client_config['aws_secret_access_key'] = settings.AWS_SECRET_ACCESS_KEY
+                logger.info("Using explicit AWS credentials for Bedrock")
+            else:
+                logger.info("Using IAM role for Bedrock authentication")
+            
+            self.bedrock_client = boto3.client(**client_config)
+            
+            logger.info(
+                f"Bedrock client initialized for region {settings.AWS_REGION} "
+                f"with model {self.model_id}"
             )
-            logger.info(f"Bedrock client initialized for region {settings.AWS_REGION}")
         except Exception as e:
             logger.error(f"Failed to initialize Bedrock client: {str(e)}")
             raise
@@ -72,13 +85,13 @@ class BedrockService:
             }
             
             logger.info(
-                f"Invoking Claude model {self.MODEL_ID} "
+                f"Invoking Claude model {self.model_id} "
                 f"(max_tokens={max_tokens}, temperature={temperature})"
             )
             
             # Invoke the model
             response = self.bedrock_client.invoke_model(
-                modelId=self.MODEL_ID,
+                modelId=self.model_id,
                 body=json.dumps(request_body),
                 contentType='application/json',
                 accept='application/json'
@@ -232,20 +245,28 @@ Generate the report now:"""
         Raises:
             ValueError: If response cannot be parsed as JSON
         """
+        logger.debug(f"Parsing Claude response (first 500 chars): {response_text[:500]}")
+        
         try:
             # Try direct JSON parsing first
-            return json.loads(response_text)
+            parsed = json.loads(response_text)
+            logger.info(f"Successfully parsed JSON directly, type: {type(parsed)}")
+            return parsed
         except json.JSONDecodeError:
             # Claude might wrap JSON in markdown code blocks
             # Try to extract JSON from ```json ... ``` blocks
             import re
+            
+            logger.debug("Direct JSON parsing failed, trying to extract from markdown")
             
             # Look for JSON code block
             json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', response_text, re.DOTALL)
             if json_match:
                 json_str = json_match.group(1)
                 try:
-                    return json.loads(json_str)
+                    parsed = json.loads(json_str)
+                    logger.info(f"Successfully parsed JSON from code block, type: {type(parsed)}")
+                    return parsed
                 except json.JSONDecodeError as e:
                     logger.error(f"Failed to parse JSON from code block: {str(e)}")
                     raise ValueError(f"Invalid JSON in code block: {str(e)}")
@@ -255,7 +276,9 @@ Generate the report now:"""
             if json_match:
                 json_str = json_match.group(0)
                 try:
-                    return json.loads(json_str)
+                    parsed = json.loads(json_str)
+                    logger.info(f"Successfully parsed JSON from text, type: {type(parsed)}")
+                    return parsed
                 except json.JSONDecodeError as e:
                     logger.error(f"Failed to parse JSON from text: {str(e)}")
                     raise ValueError(f"Invalid JSON in response: {str(e)}")

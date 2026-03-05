@@ -18,12 +18,21 @@ class S3Service:
     def __init__(self):
         """Initialize S3 client with credentials from settings"""
         try:
-            self.s3_client = boto3.client(
-                's3',
-                region_name=settings.AWS_REGION
-            )
+            # Build client config - use IAM role if credentials not provided
+            client_config = {'region_name': settings.AWS_REGION}
+            
+            # Only add credentials if explicitly provided (otherwise use IAM role)
+            if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+                client_config['aws_access_key_id'] = settings.AWS_ACCESS_KEY_ID
+                client_config['aws_secret_access_key'] = settings.AWS_SECRET_ACCESS_KEY
+                logger.info("Using explicit AWS credentials for S3")
+            else:
+                logger.info("Using IAM role for S3 authentication")
+            
+            self.s3_client = boto3.client('s3', **client_config)
             self.audio_bucket = settings.AWS_S3_BUCKET_AUDIO
             self.reports_bucket = settings.AWS_S3_BUCKET_REPORTS
+            
             logger.info(f"S3 client initialized for region {settings.AWS_REGION}")
         except Exception as e:
             logger.error(f"Failed to initialize S3 client: {str(e)}")

@@ -257,6 +257,22 @@ class ReportService:
         # Parse JSON response
         report_data = self.bedrock.parse_claude_json_response(response['content'])
         
+        # Validate that report_data is a dictionary
+        if not isinstance(report_data, dict):
+            logger.error(f"Expected dict from parse_claude_json_response, got {type(report_data)}: {report_data}")
+            raise ValueError(f"Invalid report data format: expected dictionary, got {type(report_data).__name__}")
+        
+        # Validate required fields
+        if 'visits' not in report_data:
+            logger.error(f"Missing 'visits' key in report_data: {report_data}")
+            raise ValueError("Invalid report data: missing 'visits' field")
+        
+        if not isinstance(report_data['visits'], list):
+            logger.error(f"'visits' field is not a list: {type(report_data['visits'])}")
+            raise ValueError("Invalid report data: 'visits' must be a list")
+        
+        logger.info(f"Successfully parsed report data with {len(report_data['visits'])} visits")
+        
         return report_data
     
     def build_excel(self, report_data: Dict[str, Any]) -> bytes:
@@ -269,6 +285,11 @@ class ReportService:
         Returns:
             Excel file as bytes
         """
+        # Validate report_data type
+        if not isinstance(report_data, dict):
+            logger.error(f"build_excel received invalid type: {type(report_data)}")
+            raise TypeError(f"report_data must be a dictionary, got {type(report_data).__name__}")
+        
         # Create workbook and worksheet
         wb = Workbook()
         ws = wb.active
@@ -304,6 +325,10 @@ class ReportService:
         
         # Add data rows
         visits = report_data.get('visits', [])
+        
+        if not isinstance(visits, list):
+            logger.error(f"'visits' field is not a list: {type(visits)}")
+            raise TypeError(f"'visits' must be a list, got {type(visits).__name__}")
         for row_num, visit in enumerate(visits, 2):
             ws.cell(row=row_num, column=1, value=visit.get('serial_no', row_num - 1))
             ws.cell(row=row_num, column=2, value=visit.get('beneficiary_name', ''))

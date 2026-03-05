@@ -19,9 +19,12 @@ class Settings(BaseSettings):
     JWT_EXPIRATION_HOURS: int = 24
     
     # AWS Configuration
+    AWS_ACCESS_KEY_ID: Optional[str] = None
+    AWS_SECRET_ACCESS_KEY: Optional[str] = None
     AWS_REGION: str = "ap-south-1"
     AWS_S3_BUCKET_AUDIO: str
     AWS_S3_BUCKET_REPORTS: str
+    AWS_BEDROCK_MODEL_ID: str = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
     
     # Application Configuration
     APP_ENV: str = "development"

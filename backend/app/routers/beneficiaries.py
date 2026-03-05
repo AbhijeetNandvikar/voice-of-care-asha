@@ -139,7 +139,7 @@ async def list_beneficiaries(
     total_pages = (total_count + page_size - 1) // page_size
     
     return BeneficiaryListResponse(
-        beneficiaries=beneficiaries,
+        items=beneficiaries,
         total_count=total_count,
         page=page,
         page_size=page_size,

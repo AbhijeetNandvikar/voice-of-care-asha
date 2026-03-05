@@ -39,9 +39,10 @@ const AddBeneficiaryForm: React.FC<AddBeneficiaryFormProps> = ({ isOpen, onClose
       const response = await api.get<PaginatedResponse<Worker>>('/workers', {
         params: { page: 1, page_size: 100 },
       });
-      setWorkers(response.data.items.filter(w => w.worker_type === 'asha_worker'));
+      setWorkers((response.data.items || []).filter(w => w.worker_type === 'asha_worker'));
     } catch (err) {
       console.error('Failed to fetch workers:', err);
+      setWorkers([]);
     }
   };
 
@@ -294,9 +295,10 @@ export const Beneficiaries: React.FC = () => {
       const response = await api.get<PaginatedResponse<Worker>>('/workers', {
         params: { page: 1, page_size: 1000 },
       });
-      setWorkers(response.data.items);
+      setWorkers(response.data.items || []);
     } catch (error) {
       console.error('Failed to fetch workers:', error);
+      setWorkers([]);
     }
   };
 
@@ -317,8 +319,8 @@ export const Beneficiaries: React.FC = () => {
       }
 
       const response = await api.get<PaginatedResponse<Beneficiary>>('/beneficiaries', { params });
-      setBeneficiaries(response.data.items);
-      setTotalCount(response.data.total);
+      setBeneficiaries(response.data.items || []);
+      setTotalCount(response.data.total_count);
     } catch (error) {
       console.error('Failed to fetch beneficiaries:', error);
     } finally {

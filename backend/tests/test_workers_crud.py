@@ -205,7 +205,7 @@ class TestListWorkers:
         assert "total_pages" in data
         assert data["page"] == 1
         assert data["page_size"] == 20
-        assert len(data["workers"]) >= 1
+        assert len(data["items"]) >= 1
     
     def test_list_workers_with_custom_pagination(self, client, test_worker):
         """Test listing workers with custom page size"""
@@ -248,8 +248,8 @@ class TestListWorkers:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         
-        assert len(data["workers"]) >= 1
-        assert any(w["first_name"] == test_worker.first_name for w in data["workers"])
+        assert len(data["items"]) >= 1
+        assert any(w["first_name"] == test_worker.first_name for w in data["items"])
     
     def test_list_workers_search_by_worker_id(self, client, test_worker):
         """Test searching workers by worker_id"""
@@ -270,8 +270,8 @@ class TestListWorkers:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         
-        assert len(data["workers"]) >= 1
-        assert any(w["worker_id"] == test_worker.worker_id for w in data["workers"])
+        assert len(data["items"]) >= 1
+        assert any(w["worker_id"] == test_worker.worker_id for w in data["items"])
     
     def test_list_workers_without_authentication(self, client):
         """Test listing workers without authentication token"""

@@ -67,7 +67,7 @@ export interface AuthResponse {
 // Pagination types
 export interface PaginatedResponse<T> {
   items: T[];
-  total: number;
+  total_count: number;
   page: number;
   page_size: number;
   total_pages: number;

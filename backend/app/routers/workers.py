@@ -125,7 +125,7 @@ async def list_workers(
     total_pages = (total_count + page_size - 1) // page_size
     
     return WorkerListResponse(
-        workers=workers,
+        items=workers,
         total_count=total_count,
         page=page,
         page_size=page_size,

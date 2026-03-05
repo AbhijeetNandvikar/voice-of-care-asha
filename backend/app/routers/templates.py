@@ -96,11 +96,15 @@ async def list_templates(
     offset = (page - 1) * page_size
     templates = query.order_by(VisitTemplate.created_at.desc()).offset(offset).limit(page_size).all()
     
+    # Calculate total pages
+    total_pages = (total + page_size - 1) // page_size
+    
     return TemplateListResponse(
-        templates=templates,
-        total=total,
+        items=templates,
+        total_count=total,
         page=page,
-        page_size=page_size
+        page_size=page_size,
+        total_pages=total_pages
     )
 
 

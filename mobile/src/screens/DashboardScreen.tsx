@@ -33,11 +33,16 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [hasOfflineToken, setHasOfflineToken] = useState(false);
 
   // Load dashboard data
   const loadDashboardData = async () => {
     try {
       if (!worker) return;
+
+      // Check if user has offline token
+      const isOffline = await syncService.hasOfflineToken();
+      setHasOfflineToken(isOffline);
 
       // Get pending sync count
       const count = await databaseService.getPendingVisitsCount();
@@ -45,6 +50,7 @@ export default function DashboardScreen() {
 
       // Get assigned beneficiaries
       const allBeneficiaries = await databaseService.getBeneficiaries(worker.id);
+      console.log('[DashboardScreen] Loaded beneficiaries:', allBeneficiaries.length);
 
       // Get today's visits to determine status
       const today = new Date();
@@ -83,6 +89,34 @@ export default function DashboardScreen() {
     }
   };
 
+  // Initialize data if no beneficiaries found
+  const handleInitializeData = async () => {
+    Alert.alert(
+      'Download Data',
+      'This will download your assigned beneficiaries and templates from the server. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Download',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const { initializeApp } = await import('../services/initService');
+              await initializeApp();
+              Alert.alert('Success', 'Data downloaded successfully!');
+              await loadDashboardData();
+            } catch (error: any) {
+              console.error('Initialization error:', error);
+              Alert.alert('Error', error.message || 'Failed to download data');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Load data on mount and when screen comes into focus
   useFocusEffect(
     useCallback(() => {
@@ -98,12 +132,15 @@ export default function DashboardScreen() {
 
   // Navigate to new visit flow
   const handleStartNewVisit = () => {
-    navigation.navigate('VisitType' as never);
+    // Navigate to the NewVisit tab, which will show the VisitType screen
+    navigation.navigate('NewVisit' as never, { screen: 'VisitType' } as never);
   };
 
   // Handle sync all pending visits
   const handleSyncPending = async () => {
     if (syncing) return;
+
+    console.log('[Dashboard] Starting sync, isOnline:', isOnline);
 
     // Check network connectivity before syncing
     if (!isOnline) {
@@ -116,13 +153,15 @@ export default function DashboardScreen() {
 
     try {
       setSyncing(true);
+      console.log('[Dashboard] Calling syncService.syncAllPending()');
 
       const result = await syncService.syncAllPending();
+      console.log('[Dashboard] Sync result:', result);
 
       if (result.success) {
         Alert.alert(
           t('sync_successful'),
-          t('sync_success_message', { count: result.syncedCount })
+          `Successfully synced ${result.syncedCount} visit(s)`
         );
         // Reload dashboard data to update pending count
         await loadDashboardData();
@@ -130,19 +169,16 @@ export default function DashboardScreen() {
         // Partial success
         Alert.alert(
           t('sync_partial_success'),
-          t('sync_partial_message', {
-            synced: result.syncedCount,
-            failed: result.failedCount,
-          })
+          `Synced: ${result.syncedCount}, Failed: ${result.failedCount}`
         );
         // Reload dashboard data
         await loadDashboardData();
       }
     } catch (error: any) {
-      console.error('Sync error:', error);
+      console.error('[Dashboard] Sync error:', error);
       Alert.alert(
         t('sync_failed'),
-        error.message || t('sync_error_message')
+        error.message || 'Failed to sync visits. Please try again.'
       );
     } finally {
       setSyncing(false);
@@ -179,6 +215,19 @@ export default function DashboardScreen() {
           <NetworkIndicator />
         </View>
       </View>
+
+      {/* Offline Token Warning */}
+      {hasOfflineToken && isOnline && (
+        <View style={styles.warningBanner}>
+          <Text style={styles.warningIcon}>⚠️</Text>
+          <View style={styles.warningContent}>
+            <Text style={styles.warningTitle}>Offline Login Detected</Text>
+            <Text style={styles.warningText}>
+              You logged in offline. To sync visits, please logout and login again with internet.
+            </Text>
+          </View>
+        </View>
+      )}
 
       {/* Pending Sync Badge */}
       {pendingSyncCount > 0 && (
@@ -225,6 +274,15 @@ export default function DashboardScreen() {
             <Text style={styles.emptyStateSubtext}>
               {t('contact_admin_for_assignments')}
             </Text>
+            <TouchableOpacity
+              style={styles.downloadButton}
+              onPress={handleInitializeData}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.downloadButtonText}>
+                Download Data from Server
+              </Text>
+            </TouchableOpacity>
           </View>
         ) : (
           beneficiaries.map((beneficiary) => (
@@ -393,6 +451,40 @@ const styles = StyleSheet.create({
     color: '#856404',
     fontWeight: '300',
   },
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#fff3cd',
+    borderLeftWidth: 4,
+    borderLeftColor: '#ffc107',
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  warningIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  warningContent: {
+    flex: 1,
+  },
+  warningTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#856404',
+    marginBottom: 4,
+  },
+  warningText: {
+    fontSize: 14,
+    color: '#856404',
+    lineHeight: 20,
+  },
   primaryButton: {
     backgroundColor: '#0066cc',
     padding: 16,
@@ -453,6 +545,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     textAlign: 'center',
+  },
+  downloadButton: {
+    backgroundColor: '#0066cc',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  downloadButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   beneficiaryCard: {
     flexDirection: 'row',

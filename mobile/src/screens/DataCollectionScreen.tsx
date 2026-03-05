@@ -13,6 +13,7 @@ import {
   Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Speech from 'expo-speech';
 
 // expo-av requires a custom dev build in Expo SDK 52+; gracefully degrade in Expo Go
@@ -52,10 +53,14 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
   const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'hi'>('en');
 
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Draft key for persistence
+  const draftKey = `visit_draft_${beneficiaryId}_${dayNumber}_${visitType}`;
 
   useEffect(() => {
     loadTemplate();
     loadPreviousAnswers();
+    loadDraft(); // Load any saved draft
     setupAudio();
     
     return () => {
@@ -94,23 +99,66 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
       }
       setTemplate(loadedTemplate);
       
-      // Create initial visit record
-      const visitData: VisitData = { answers: [] };
-      const newVisitId = await databaseService.createVisit({
-        visit_type: visitType,
-        visit_date_time: new Date().toISOString(),
-        day_number: dayNumber,
-        assigned_asha_id: worker!.id,
-        beneficiary_id: beneficiaryId,
-        template_id: templateId,
-        visit_data: visitData,
-      });
-      setVisitId(newVisitId);
+      // Don't create visit yet - only create when user completes all questions
+      console.log('[DataCollection] Template loaded with', loadedTemplate.questions.length, 'questions');
     } catch (error) {
       console.error('Error loading template:', error);
       Alert.alert('Error', 'Failed to load template');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDraft = async () => {
+    try {
+      const draftData = await AsyncStorage.getItem(draftKey);
+      if (draftData) {
+        const draft = JSON.parse(draftData);
+        console.log('[DataCollection] Loading draft with', draft.answers.length, 'answers');
+        
+        // Restore answers
+        const restoredAnswers = new Map<string, Answer>();
+        draft.answers.forEach((answer: Answer) => {
+          restoredAnswers.set(answer.question_id, answer);
+        });
+        setAnswers(restoredAnswers);
+        
+        // Restore current question index
+        if (draft.currentQuestionIndex !== undefined) {
+          setCurrentQuestionIndex(draft.currentQuestionIndex);
+        }
+        
+        // Restore language
+        if (draft.language) {
+          setSelectedLanguage(draft.language);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading draft:', error);
+    }
+  };
+
+  const saveDraft = async (currentAnswers: Map<string, Answer>, questionIndex: number) => {
+    try {
+      const draft = {
+        answers: Array.from(currentAnswers.values()),
+        currentQuestionIndex: questionIndex,
+        language: selectedLanguage,
+        timestamp: new Date().toISOString(),
+      };
+      await AsyncStorage.setItem(draftKey, JSON.stringify(draft));
+      console.log('[DataCollection] Draft saved');
+    } catch (error) {
+      console.error('Error saving draft:', error);
+    }
+  };
+
+  const clearDraft = async () => {
+    try {
+      await AsyncStorage.removeItem(draftKey);
+      console.log('[DataCollection] Draft cleared');
+    } catch (error) {
+      console.error('Error clearing draft:', error);
     }
   };
 
@@ -144,15 +192,8 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
       updatedAnswers.set(questionId, answer);
       setAnswers(updatedAnswers);
 
-      // Update visit in database
-      if (visitId) {
-        const visitData: VisitData = {
-          answers: Array.from(updatedAnswers.values()),
-        };
-        
-        // Update the existing visit record
-        await databaseService.updateVisit(visitId, visitData);
-      }
+      // Save draft immediately (no visit ID needed yet)
+      await saveDraft(updatedAnswers, currentQuestionIndex);
     } catch (error) {
       console.error('Error saving answer:', error);
       Alert.alert('Error', 'Failed to save answer');
@@ -164,7 +205,10 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
     if (!template) return;
     
     const question = template.questions[currentQuestionIndex];
-    const text = selectedLanguage === 'en' ? question.question_en : question.question_hi;
+    const rawQ = question as any;
+    const text = selectedLanguage === 'en'
+      ? (question.question_en || rawQ.text)
+      : (question.question_hi || rawQ.text);
     
     if (isSpeaking) {
       Speech.stop();
@@ -351,7 +395,7 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!template) return;
     
     if (!canNavigateNext()) {
@@ -360,22 +404,52 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
     }
 
     if (currentQuestionIndex < template.questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      const nextIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(nextIndex);
       setNumericInput('');
       setNumericError('');
+      
+      // Save draft with new index
+      await saveDraft(answers, nextIndex);
     } else {
-      // Navigate to summary
-      if (visitId) {
-        navigation.navigate('Summary', { visitId });
+      // Last question - create visit and navigate to summary
+      try {
+        // Convert answers Map to array
+        const answersArray = Array.from(answers.values());
+        
+        const visitData: VisitData = { answers: answersArray };
+        const newVisitId = await databaseService.createVisit({
+          visit_type: visitType,
+          visit_date_time: new Date().toISOString(),
+          day_number: dayNumber,
+          assigned_asha_id: worker!.id,
+          beneficiary_id: beneficiaryId,
+          template_id: templateId,
+          visit_data: visitData,
+        });
+        
+        console.log('[DataCollection] Visit created with ID:', newVisitId);
+        
+        // Clear draft after successful save
+        await clearDraft();
+        
+        navigation.navigate('Summary', { visitId: newVisitId });
+      } catch (error) {
+        console.error('Error creating visit:', error);
+        Alert.alert('Error', 'Failed to save visit. Please try again.');
       }
     }
   };
 
-  const handlePrevious = () => {
+  const handlePrevious = async () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      const prevIndex = currentQuestionIndex - 1;
+      setCurrentQuestionIndex(prevIndex);
       setNumericInput('');
       setNumericError('');
+      
+      // Save draft with new index
+      await saveDraft(answers, prevIndex);
     }
   };
 
@@ -397,11 +471,44 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
     );
   }
 
+  // Check if template has questions
+  if (!template.questions || template.questions.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>No questions found in template</Text>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  console.log('[DataCollection] Template questions:', template.questions.length);
+  console.log('[DataCollection] Current question index:', currentQuestionIndex);
+  console.log('[DataCollection] Current question:', JSON.stringify(template.questions[currentQuestionIndex], null, 2));
+
   const currentQuestion = template.questions[currentQuestionIndex];
   const currentAnswer = answers.get(currentQuestion.id);
   const previousAnswer = previousAnswers.get(currentQuestion.id);
-  const questionText = selectedLanguage === 'en' ? currentQuestion.question_en : currentQuestion.question_hi;
-  const actionText = selectedLanguage === 'en' ? currentQuestion.action_en : currentQuestion.action_hi;
+  // Support both new format (question_en/question_hi/input_type) and legacy format (text/type)
+  const rawQuestion = currentQuestion as any;
+  // Map legacy type values to expected input_type values
+  const resolvedInputType = currentQuestion.input_type
+    || (rawQuestion.type === 'boolean' ? 'yes_no' : rawQuestion.type === 'number' ? 'number' : rawQuestion.type === 'voice' ? 'voice' : rawQuestion.type);
+  const questionText = selectedLanguage === 'en'
+    ? (currentQuestion.question_en || rawQuestion.text)
+    : (currentQuestion.question_hi || rawQuestion.text);
+  const actionText = selectedLanguage === 'en'
+    ? (currentQuestion.action_en || rawQuestion.action)
+    : (currentQuestion.action_hi || rawQuestion.action);
+  
+  console.log('[DataCollection] Question text:', questionText);
+  console.log('[DataCollection] Action text:', actionText);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -413,7 +520,12 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
         <Text style={styles.progress}>
           Question {currentQuestionIndex + 1} of {template.questions.length}
         </Text>
-        <TouchableOpacity onPress={() => setSelectedLanguage(selectedLanguage === 'en' ? 'hi' : 'en')}>
+        <TouchableOpacity onPress={async () => {
+          const newLang = selectedLanguage === 'en' ? 'hi' : 'en';
+          setSelectedLanguage(newLang);
+          // Save draft with new language
+          await saveDraft(answers, currentQuestionIndex);
+        }}>
           <Text style={styles.languageToggle}>{selectedLanguage === 'en' ? 'हिं' : 'EN'}</Text>
         </TouchableOpacity>
       </View>
@@ -452,7 +564,7 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
         )}
 
         {/* Answer Input based on type */}
-        {currentQuestion.input_type === 'yes_no' && (
+        {resolvedInputType === 'yes_no' && (
           <View style={styles.answerSection}>
             <View style={styles.yesNoButtons}>
               <TouchableOpacity
@@ -491,7 +603,7 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
           </View>
         )}
 
-        {currentQuestion.input_type === 'number' && (
+        {resolvedInputType === 'number' && (
           <View style={styles.answerSection}>
             <TextInput
               style={[styles.numericInput, numericError && styles.numericInputError]}
@@ -508,7 +620,7 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
           </View>
         )}
 
-        {currentQuestion.input_type === 'voice' && (
+        {resolvedInputType === 'voice' && (
           <View style={styles.answerSection}>
             {!Audio ? (
               <View style={styles.unavailableContainer}>
@@ -626,7 +738,7 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
                         style={styles.questionListText} 
                         numberOfLines={2}
                       >
-                        {selectedLanguage === 'en' ? question.question_en : question.question_hi}
+                        {selectedLanguage === 'en' ? (question.question_en || (question as any).text) : (question.question_hi || (question as any).text)}
                       </Text>
                     </View>
                     {isAnswered && (
@@ -657,6 +769,23 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: '#666',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#d32f2f',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  backButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   header: {
     flexDirection: 'row',

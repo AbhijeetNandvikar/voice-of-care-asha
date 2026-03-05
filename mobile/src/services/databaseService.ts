@@ -52,6 +52,12 @@ class DatabaseService {
    * Seed storage with initial data from server
    */
   async seedFromServer(data: InitData): Promise<void> {
+    console.log('[databaseService] Seeding database with:', {
+      worker: data.worker.worker_id,
+      beneficiariesCount: data.beneficiaries.length,
+      templatesCount: data.templates.length,
+    });
+    
     // Upsert worker
     const workers = await this.getItems<Worker>(KEYS.WORKERS);
     const workerIdx = workers.findIndex((w) => w.id === data.worker.id);
@@ -61,6 +67,7 @@ class DatabaseService {
       workers.push(data.worker);
     }
     await this.setItems(KEYS.WORKERS, workers);
+    console.log('[databaseService] Workers saved:', workers.length);
 
     // Upsert beneficiaries
     const beneficiaries = await this.getItems<Beneficiary>(KEYS.BENEFICIARIES);
@@ -73,20 +80,25 @@ class DatabaseService {
       }
     }
     await this.setItems(KEYS.BENEFICIARIES, beneficiaries);
+    console.log('[databaseService] Beneficiaries saved:', beneficiaries.length);
+    console.log('[databaseService] Beneficiary MCTS IDs:', beneficiaries.map(b => b.mcts_id));
 
-    // Upsert templates
-    const templates = await this.getItems<VisitTemplate>(KEYS.TEMPLATES);
-    for (const t of data.templates) {
-      const idx = templates.findIndex((et) => et.id === t.id);
-      if (idx >= 0) {
-        templates[idx] = t;
-      } else {
-        templates.push(t);
+    // Replace templates completely (don't merge to avoid schema conflicts)
+    console.log('[databaseService] Replacing templates with fresh data from server');
+    await this.setItems(KEYS.TEMPLATES, data.templates);
+    console.log('[databaseService] Templates saved:', data.templates.length);
+    
+    // Verify templates were saved correctly
+    const savedTemplates = await this.getItems<VisitTemplate>(KEYS.TEMPLATES);
+    console.log('[databaseService] Verification - Templates in storage:', savedTemplates.length);
+    savedTemplates.forEach(t => {
+      console.log(`  - ${t.name}: ${t.questions?.length || 0} questions`);
+      if (t.questions && t.questions.length > 0) {
+        console.log(`    First question fields:`, Object.keys(t.questions[0]));
       }
-    }
-    await this.setItems(KEYS.TEMPLATES, templates);
+    });
 
-    console.log('Database seeded successfully');
+    console.log('[databaseService] Database seeded successfully');
   }
 
   /**
@@ -116,7 +128,12 @@ class DatabaseService {
    */
   async getBeneficiaryByMCTS(mctsId: string): Promise<Beneficiary | null> {
     const beneficiaries = await this.getItems<Beneficiary>(KEYS.BENEFICIARIES);
-    return beneficiaries.find((b) => b.mcts_id === mctsId) || null;
+    console.log('[databaseService] Searching for MCTS ID:', mctsId);
+    console.log('[databaseService] Total beneficiaries in storage:', beneficiaries.length);
+    console.log('[databaseService] Available MCTS IDs:', beneficiaries.map(b => b.mcts_id));
+    const found = beneficiaries.find((b) => b.mcts_id === mctsId) || null;
+    console.log('[databaseService] Found beneficiary:', found ? `${found.first_name} ${found.last_name}` : 'NOT FOUND');
+    return found;
   }
 
   /**
@@ -124,7 +141,23 @@ class DatabaseService {
    */
   async getTemplate(type: string): Promise<VisitTemplate | null> {
     const templates = await this.getItems<VisitTemplate>(KEYS.TEMPLATES);
-    return templates.find((t) => t.template_type === type) || null;
+    console.log('[databaseService] Getting template for type:', type);
+    console.log('[databaseService] Total templates in storage:', templates.length);
+    
+    const template = templates.find((t) => t.template_type === type) || null;
+    
+    if (template) {
+      console.log('[databaseService] Template found:', template.name);
+      console.log('[databaseService] Template has questions:', template.questions?.length || 0);
+      if (template.questions && template.questions.length > 0) {
+        console.log('[databaseService] First question:', template.questions[0].question_en || (template.questions[0] as any).text);
+      }
+    } else {
+      console.log('[databaseService] No template found for type:', type);
+      console.log('[databaseService] Available template types:', templates.map(t => t.template_type));
+    }
+    
+    return template;
   }
 
   /**
@@ -242,6 +275,21 @@ class DatabaseService {
       visits[idx] = { ...visits[idx], visit_data: visitData, updated_at: now };
       await this.setItems(KEYS.VISITS, visits);
     }
+  }
+
+  /**
+   * Clear all data from storage (for debugging or data migration)
+   */
+  async clearAllData(): Promise<void> {
+    console.log('[databaseService] Clearing all data from storage');
+    await AsyncStorage.multiRemove([
+      KEYS.WORKERS,
+      KEYS.BENEFICIARIES,
+      KEYS.TEMPLATES,
+      KEYS.VISITS,
+      KEYS.NEXT_VISIT_ID,
+    ]);
+    console.log('[databaseService] All data cleared');
   }
 }
 

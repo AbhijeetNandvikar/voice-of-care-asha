@@ -16,6 +16,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
 import { logout as authLogout } from '../services/authService';
+import databaseService from '../services/databaseService';
+import initService from '../services/initService';
 
 interface EarningsData {
   earnings_this_month: number;
@@ -108,6 +110,44 @@ export default function ProfileScreen() {
             } catch (error) {
               console.error('Logout error:', error);
               Alert.alert(t('error'), t('logout_failed'));
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Handle clear data and re-sync
+  const handleClearAndResync = () => {
+    Alert.alert(
+      'Clear Data & Re-sync',
+      'This will clear all local data and re-download from the server. Any unsynced visits will be lost. Continue?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Clear & Re-sync',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoadingEarnings(true);
+              
+              // Clear all local data
+              await databaseService.clearAllData();
+              console.log('[ProfileScreen] Local data cleared');
+              
+              // Re-initialize from server
+              await initService.initialize();
+              console.log('[ProfileScreen] Re-initialization complete');
+              
+              Alert.alert('Success', 'Data cleared and re-synced successfully!');
+            } catch (error) {
+              console.error('Clear and resync error:', error);
+              Alert.alert('Error', 'Failed to clear and re-sync data. Please try again.');
+            } finally {
+              setLoadingEarnings(false);
             }
           },
         },
@@ -312,6 +352,14 @@ export default function ProfileScreen() {
 
       {/* Logout Button */}
       <View style={styles.section}>
+        <TouchableOpacity
+          style={styles.clearDataButton}
+          onPress={handleClearAndResync}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.clearDataButtonText}>Clear Data & Re-sync</Text>
+        </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogout}
@@ -567,6 +615,23 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  clearDataButton: {
+    backgroundColor: '#ff9800',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    marginBottom: 12,
+  },
+  clearDataButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   logoutButton: {
     backgroundColor: '#dc3545',

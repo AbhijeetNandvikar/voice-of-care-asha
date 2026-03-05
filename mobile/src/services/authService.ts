@@ -25,19 +25,25 @@ export const login = async (
   workerId: string,
   password: string
 ): Promise<AuthResponse> => {
+  console.log('[authService] Attempting login for worker:', workerId);
+  
   // Try backend first
   try {
+    console.log('[authService] Trying backend API...');
     const response = await api.post<AuthResponse>('/auth/login', {
       worker_id: workerId,
       password: password,
     });
 
+    console.log('[authService] Backend login successful');
     const { access_token, worker } = response.data;
     await SecureStore.setItemAsync(TOKEN_KEY, access_token);
     await SecureStore.setItemAsync(WORKER_KEY, JSON.stringify(worker));
 
     return response.data;
   } catch (error: any) {
+    console.log('[authService] Backend login failed:', error.message);
+    
     if (error.response?.status === 401) {
       throw new Error('Invalid worker ID or password');
     }
@@ -47,14 +53,17 @@ export const login = async (
 
     // Network unavailable — try offline mock credentials
     if (isNetworkError(error)) {
+      console.log('[authService] Network error detected, trying offline mode...');
       const mockWorker = findMockWorker(workerId, password);
       if (mockWorker) {
+        console.log('[authService] Mock worker found:', mockWorker.worker_id);
         const mockToken = `mock_offline_${mockWorker.worker_id}`;
         await SecureStore.setItemAsync(TOKEN_KEY, mockToken);
         await SecureStore.setItemAsync(WORKER_KEY, JSON.stringify(mockWorker));
 
         return { access_token: mockToken, token_type: 'bearer', worker: mockWorker };
       }
+      console.log('[authService] Mock worker not found for:', workerId);
       throw new Error('Network unavailable and worker ID / password not recognised in offline mode.');
     }
 

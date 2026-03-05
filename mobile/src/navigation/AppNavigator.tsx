@@ -130,6 +130,10 @@ function MainNavigator() {
         options={{
           title: 'Dashboard',
           tabBarLabel: 'Home',
+          tabBarIcon: ({ color, size }) => {
+            const Ionicons = require('@expo/vector-icons').Ionicons;
+            return <Ionicons name="home" size={size} color={color} />;
+          },
         }}
       />
       <MainTab.Screen
@@ -139,6 +143,10 @@ function MainNavigator() {
           title: 'New Visit',
           tabBarLabel: 'New Visit',
           headerShown: false,
+          tabBarIcon: ({ color, size }) => {
+            const Ionicons = require('@expo/vector-icons').Ionicons;
+            return <Ionicons name="add-circle" size={size} color={color} />;
+          },
         }}
       />
       <MainTab.Screen
@@ -147,6 +155,10 @@ function MainNavigator() {
         options={{
           title: 'Past Visits',
           tabBarLabel: 'History',
+          tabBarIcon: ({ color, size }) => {
+            const Ionicons = require('@expo/vector-icons').Ionicons;
+            return <Ionicons name="time" size={size} color={color} />;
+          },
         }}
       />
       <MainTab.Screen
@@ -155,6 +167,10 @@ function MainNavigator() {
         options={{
           title: 'Profile',
           tabBarLabel: 'Profile',
+          tabBarIcon: ({ color, size }) => {
+            const Ionicons = require('@expo/vector-icons').Ionicons;
+            return <Ionicons name="person" size={size} color={color} />;
+          },
         }}
       />
     </MainTab.Navigator>

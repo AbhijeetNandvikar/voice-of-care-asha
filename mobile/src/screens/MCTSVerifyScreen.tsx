@@ -20,7 +20,7 @@ type Props = VisitScreenProps<'MCTSVerify'>;
 
 export default function MCTSVerifyScreen({ navigation, route }: Props) {
   const { visitType } = route.params;
-  const { user } = useAuthStore();
+  const { worker } = useAuthStore();
   
   const [mctsId, setMctsId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,7 +49,7 @@ export default function MCTSVerifyScreen({ navigation, route }: Props) {
       }
 
       // Check if beneficiary is assigned to current worker
-      if (foundBeneficiary.assigned_asha_id !== user?.id) {
+      if (foundBeneficiary.assigned_asha_id !== worker?.id) {
         Alert.alert(
           'Authorization Error',
           'This beneficiary is not assigned to you. Please contact your supervisor.',

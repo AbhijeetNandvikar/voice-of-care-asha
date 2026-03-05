@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  ScrollView,
 } from 'react-native';
 import { VisitScreenProps } from '../navigation/types';
 import databaseService from '../services/databaseService';
@@ -108,7 +109,7 @@ export default function DaySelectScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Select Visit Day</Text>
         <Text style={styles.subtitle}>
           {beneficiaryName} ({mctsId})
@@ -159,7 +160,7 @@ export default function DaySelectScreen({ navigation, route }: Props) {
             </Text>
           </View>
         )}
-      </View>
+      </ScrollView>
 
       {/* Warning Modal */}
       <Modal
@@ -203,7 +204,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 20,
+    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,

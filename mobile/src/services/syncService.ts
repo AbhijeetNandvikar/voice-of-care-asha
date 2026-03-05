@@ -1,4 +1,5 @@
 import * as FileSystem from 'expo-file-system';
+import * as SecureStore from 'expo-secure-store';
 import api from './api';
 import databaseService from './databaseService';
 import { Visit } from '../types';
@@ -40,6 +41,12 @@ class SyncService {
    */
   async syncAllPending(): Promise<SyncResult> {
     try {
+      // Check if user is authenticated with a real token (not offline mock)
+      const token = await this.getAuthToken();
+      if (!token || token.startsWith('mock_offline_')) {
+        throw new Error('You are logged in with offline credentials. Please logout and login again with internet connection to sync.');
+      }
+
       // Get all pending visits from SQLite
       const pendingVisits = await databaseService.getPendingVisits();
 
@@ -203,6 +210,12 @@ class SyncService {
    */
   async syncVisit(visitId: number): Promise<boolean> {
     try {
+      // Check if user is authenticated with a real token (not offline mock)
+      const token = await this.getAuthToken();
+      if (!token || token.startsWith('mock_offline_')) {
+        throw new Error('You are logged in with offline credentials. Please logout and login again with internet connection to sync.');
+      }
+
       // Get the specific visit
       const visits = await databaseService.getVisits({ is_synced: false });
       const visit = visits.find((v) => v.id === visitId);
@@ -327,6 +340,33 @@ class SyncService {
     } catch (error) {
       console.error('Error getting last sync time:', error);
       return null;
+    }
+  }
+
+  /**
+   * Get stored auth token
+   * @returns Auth token or null
+   */
+  private async getAuthToken(): Promise<string | null> {
+    try {
+      return await SecureStore.getItemAsync('auth_token');
+    } catch (error) {
+      console.error('Error getting auth token:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if user is logged in with offline/mock credentials
+   * @returns true if user has offline token, false otherwise
+   */
+  async hasOfflineToken(): Promise<boolean> {
+    try {
+      const token = await this.getAuthToken();
+      return token !== null && token.startsWith('mock_offline_');
+    } catch (error) {
+      console.error('Error checking offline token:', error);
+      return false;
     }
   }
 }

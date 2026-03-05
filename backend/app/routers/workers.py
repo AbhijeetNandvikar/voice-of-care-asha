@@ -196,3 +196,28 @@ async def update_worker(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to update worker: {str(e)}"
         )
+
+
+@router.get("/earnings", response_model=dict)
+async def get_worker_earnings(
+    db: Session = Depends(get_db),
+    current_worker: Worker = Depends(get_current_worker)
+):
+    """
+    Get earnings data for the authenticated worker
+    
+    Returns earnings for current month and total earnings.
+    Note: In v1, this returns placeholder data. Future versions will calculate
+    actual earnings based on completed visits and payment rates.
+    """
+    # TODO: In future versions, calculate actual earnings from visits
+    # For now, return placeholder data from worker meta_data or defaults
+    
+    earnings_data = current_worker.meta_data.get("earnings", {}) if current_worker.meta_data else {}
+    
+    return {
+        "earnings_this_month": earnings_data.get("this_month", 0),
+        "total_earnings": earnings_data.get("total", 0),
+        "worker_id": current_worker.worker_id,
+        "worker_name": f"{current_worker.first_name} {current_worker.last_name}"
+    }

@@ -21,6 +21,10 @@ __pycache__/
 # Node
 web/node_modules/
 web/dist/
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
 
 # Misc
 .DS_Store

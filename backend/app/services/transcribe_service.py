@@ -152,8 +152,11 @@ class TranscribeService:
                 logger.error(
                     f"Transcription job '{job_name}' failed: {failure_reason}"
                 )
-                return None
-                
+                # Raise so callers can distinguish failure from still-in-progress
+                raise RuntimeError(
+                    f"Transcription job '{job_name}' failed: {failure_reason}"
+                )
+
             else:
                 # Job is still in progress (IN_PROGRESS or QUEUED)
                 logger.info(f"Transcription job '{job_name}' status: {status}")

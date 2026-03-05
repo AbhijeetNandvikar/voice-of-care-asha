@@ -3,6 +3,7 @@ Sync Service for Voice of Care
 Handles visit synchronization from mobile devices to backend
 """
 
+import copy
 import logging
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime, UTC
@@ -295,7 +296,11 @@ class SyncService:
                         s3_uri=s3_uri,
                         language_code=language_code
                     )
-                    
+
+                    # Store job name so we can poll for results later
+                    answer['transcription_job_name'] = job_name
+                    answer['transcription_language'] = language_code
+
                     logger.info(f"Started transcription job {job_name} for {s3_key}")
                     
                 except Exception as transcribe_error:
@@ -312,6 +317,96 @@ class SyncService:
                 # Don't fail the entire sync for audio processing errors
                 # Just log and continue
     
+    def poll_pending_transcriptions(
+        self, db: Session, visit_ids: Optional[List[int]] = None
+    ) -> Dict[str, int]:
+        """
+        Poll pending transcription jobs and write results back to the database.
+
+        For each completed job the transcript is stored in the answer as
+        'transcript_hi' (or 'transcript_en' for English) and
+        'transcription_job_name' is removed so the answer won't be polled again.
+
+        Args:
+            db: Database session
+            visit_ids: If provided, only poll these specific visit IDs.
+                       If None, scans all synced visits (fallback / manual use).
+
+        Returns:
+            Dict with counts: {updated, still_pending, failed}
+        """
+        counts = {"updated": 0, "still_pending": 0, "failed": 0}
+
+        query = db.query(Visit).filter(Visit.is_synced == True)
+        if visit_ids:
+            query = query.filter(Visit.id.in_(visit_ids))
+        visits = query.all()
+
+        for visit in visits:
+            if not visit.visit_data or 'answers' not in visit.visit_data:
+                continue
+
+            answers = visit.visit_data['answers']
+            visit_dirty = False
+
+            for answer in answers:
+                job_name = answer.get('transcription_job_name')
+                if not job_name:
+                    continue
+
+                try:
+                    transcript_text = self.transcribe_service.get_transcription_result(job_name)
+
+                    if transcript_text is None:
+                        # Job still running or failed — leave job_name in place
+                        counts["still_pending"] += 1
+                        continue
+
+                    # Store transcript keyed by language
+                    language = answer.get('transcription_language', 'hi-IN')
+                    if language.startswith('en'):
+                        answer['transcript_en'] = transcript_text
+                    else:
+                        answer['transcript_hi'] = transcript_text
+
+                    # Remove tracking fields — job is done
+                    answer.pop('transcription_job_name', None)
+                    answer.pop('transcription_language', None)
+
+                    visit_dirty = True
+                    counts["updated"] += 1
+                    logger.info(
+                        f"Stored transcript for visit {visit.id}, "
+                        f"question {answer.get('question_id')} (job: {job_name})"
+                    )
+
+                except RuntimeError as e:
+                    # Job permanently failed — remove job name so we stop polling it
+                    logger.error(
+                        f"Transcription job permanently failed for visit {visit.id}, "
+                        f"question {answer.get('question_id')}: {e}"
+                    )
+                    answer['transcription_failed'] = str(e)
+                    answer.pop('transcription_job_name', None)
+                    answer.pop('transcription_language', None)
+                    visit_dirty = True
+                    counts["failed"] += 1
+
+                except Exception as e:
+                    logger.error(
+                        f"Error polling transcription job '{job_name}' "
+                        f"for visit {visit.id}: {e}"
+                    )
+                    counts["failed"] += 1
+
+            if visit_dirty:
+                # SQLAlchemy won't detect in-place JSON mutations automatically
+                visit.visit_data = copy.deepcopy(visit.visit_data)
+
+        db.commit()
+        logger.info(f"Transcription poll complete: {counts}")
+        return counts
+
     def _find_audio_file_key(
         self,
         audio_files: Dict[str, UploadFile],

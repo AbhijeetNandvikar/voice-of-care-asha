@@ -2,13 +2,15 @@
 Sync API endpoints for data synchronization from mobile devices
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
-from sqlalchemy.orm import Session
-from typing import List, Dict, Any
-import json
+import asyncio
 import logging
+import json
+from typing import List, Dict, Any
 
-from app.database import get_db
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, UploadFile, File, Form
+from sqlalchemy.orm import Session
+
+from app.database import get_db, SessionLocal
 from app.dependencies import get_current_worker
 from app.models.worker import Worker
 from app.services.sync_service import sync_service
@@ -17,9 +19,38 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/sync", tags=["sync"])
 
+# How long to wait between poll attempts (seconds) and max attempts
+_POLL_INTERVAL = 30
+_POLL_MAX_ATTEMPTS = 10  # 10 × 30s = 5 min max wait per sync batch
+
+
+async def _poll_transcriptions_for_batch(visit_ids: List[int]) -> None:
+    """
+    Background task: retry-poll transcription jobs for a specific set of visits.
+    Runs after the sync response has been returned to the mobile client.
+    Stops early once all jobs in the batch are resolved.
+    """
+    for attempt in range(1, _POLL_MAX_ATTEMPTS + 1):
+        await asyncio.sleep(_POLL_INTERVAL)
+
+        db = SessionLocal()
+        try:
+            counts = sync_service.poll_pending_transcriptions(db=db, visit_ids=visit_ids)
+            logger.info(
+                f"Transcription poll attempt {attempt}/{_POLL_MAX_ATTEMPTS} "
+                f"for visits {visit_ids}: {counts}"
+            )
+            if counts["still_pending"] == 0:
+                break
+        except Exception as e:
+            logger.error(f"Error in background transcription poll: {e}", exc_info=True)
+        finally:
+            db.close()
+
 
 @router.post("/visits")
 async def sync_visits(
+    background_tasks: BackgroundTasks,
     visits_json: str = Form(...),
     current_worker: Worker = Depends(get_current_worker),
     db: Session = Depends(get_db),
@@ -105,14 +136,19 @@ async def sync_visits(
             worker_id=current_worker.id,
             db=db
         )
-        
+
+        # After the response is sent, poll until transcription jobs for this
+        # batch complete and write results back to the DB.
+        if synced_visit_ids:
+            background_tasks.add_task(_poll_transcriptions_for_batch, synced_visit_ids)
+
         # Build response
         success = len(failed_visits) == 0
         message = f"Successfully synced {len(synced_visit_ids)} visits"
-        
+
         if len(failed_visits) > 0:
             message += f", {len(failed_visits)} visits failed"
-        
+
         return {
             "success": success,
             "synced_visit_ids": synced_visit_ids,
@@ -128,4 +164,42 @@ async def sync_visits(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Sync processing failed: {str(e)}"
+        )
+
+
+@router.post("/transcriptions/poll")
+async def poll_transcriptions(
+    current_worker: Worker = Depends(get_current_worker),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Manually poll all pending AWS Transcribe jobs and write completed transcripts
+    back to the database. Useful for dev/testing or recovering missed jobs.
+
+    Returns:
+        {updated, still_pending, failed} counts
+    """
+    if current_worker.worker_type not in ("supervisor", "admin", "asha_worker"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to poll transcriptions"
+        )
+
+    try:
+        counts = sync_service.poll_pending_transcriptions(db=db)
+        return {
+            "success": True,
+            "updated": counts["updated"],
+            "still_pending": counts["still_pending"],
+            "failed": counts["failed"],
+            "message": (
+                f"Transcription poll complete: {counts['updated']} updated, "
+                f"{counts['still_pending']} still pending, {counts['failed']} failed"
+            )
+        }
+    except Exception as e:
+        logger.error(f"Error during transcription poll: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Transcription polling failed: {str(e)}"
         )

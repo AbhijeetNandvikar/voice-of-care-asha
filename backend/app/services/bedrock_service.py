@@ -157,6 +157,74 @@ class BedrockService:
             logger.error(f"Unexpected error during Bedrock invocation: {str(e)}")
             raise
     
+    def invoke_claude_converse(
+        self,
+        messages: List[Dict[str, Any]],
+        system_prompt: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.0,
+    ) -> Dict[str, Any]:
+        """
+        Invoke Claude via the Bedrock converse() API (supports tool use).
+
+        Args:
+            messages: List of message dicts in Bedrock converse format
+            system_prompt: System instruction text
+            tools: List of tool definitions (Bedrock toolSpec format)
+            max_tokens: Maximum tokens in response
+            temperature: Sampling temperature
+
+        Returns:
+            Raw Bedrock converse() response dict
+        """
+        try:
+            request: Dict[str, Any] = {
+                "modelId": self.model_id,
+                "messages": messages,
+                "inferenceConfig": {
+                    "maxTokens": max_tokens,
+                    "temperature": temperature,
+                },
+            }
+
+            if system_prompt:
+                request["system"] = [{"text": system_prompt}]
+
+            if tools:
+                request["toolConfig"] = {
+                    "tools": [
+                        {"toolSpec": {
+                            "name": t["name"],
+                            "description": t.get("description", ""),
+                            "inputSchema": {"json": t["inputSchema"]},
+                        }}
+                        for t in tools
+                    ]
+                }
+
+            logger.info(f"Calling Bedrock converse() with {len(messages)} messages")
+            response = self.bedrock_client.converse(**request)
+            logger.info(
+                f"converse() stop_reason={response.get('stopReason')} "
+                f"usage={response.get('usage', {})}"
+            )
+            return response
+
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            error_message = e.response.get("Error", {}).get("Message", str(e))
+            logger.error(f"Bedrock converse() ClientError {error_code}: {error_message}")
+            raise Exception(f"AI service error: {error_message}")
+
+        except BotoCoreError as e:
+            logger.error(f"BotoCore error during converse(): {str(e)}")
+            raise Exception(f"AWS service error: {str(e)}")
+
+        except Exception as e:
+            logger.error(f"Unexpected error during converse(): {str(e)}")
+            raise
+
     def format_hbnc_report_prompt(self, visits_data: List[Dict[str, Any]]) -> str:
         """
         Format visit data into a structured prompt for Claude to generate HBNC report

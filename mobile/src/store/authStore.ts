@@ -86,11 +86,14 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await apiLogin(workerId, password);
+          // Also check locally stored offline MPIN so returning users go to MPINVerify
+          const { hasMPINSetup } = await import('../services/authService');
+          const hasMPIN = !!response.worker.mpin_hash || (await hasMPINSetup());
           set({
             token: response.access_token,
             worker: response.worker,
             isAuthenticated: true,
-            hasMPIN: !!response.worker.mpin_hash,
+            hasMPIN,
             isLoading: false,
             error: null,
           });
@@ -128,7 +131,8 @@ export const useAuthStore = create<AuthState>()(
       verifyMPIN: async (mpin: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await apiVerifyMPIN(mpin);
+          const workerId = get().worker?.worker_id ?? '';
+          const response = await apiVerifyMPIN(workerId, mpin);
           set({
             token: response.access_token,
             worker: response.worker,

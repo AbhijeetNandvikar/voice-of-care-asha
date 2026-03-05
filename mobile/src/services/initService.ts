@@ -1,6 +1,7 @@
 import api from './api';
 import databaseService from './databaseService';
 import { InitData } from '../types';
+import { getMockInitData } from '../data/mockData';
 
 /**
  * Initialization Service
@@ -13,19 +14,22 @@ import { InitData } from '../types';
  * @returns InitData containing worker, beneficiaries, and templates
  * @throws Error if network request fails or data is invalid
  */
+const isNetworkError = (error: any): boolean =>
+  error.code === 'ECONNABORTED' ||
+  error.message === 'Network Error' ||
+  error.code === 'ERR_NETWORK' ||
+  !error.response;
+
 export const fetchInitData = async (): Promise<InitData> => {
   try {
     const response = await api.get<InitData>('/mobile/init');
-    
-    // Validate response data
+
     if (!response.data || !response.data.worker) {
       throw new Error('Invalid initialization data received from server');
     }
-
     if (!Array.isArray(response.data.beneficiaries)) {
       throw new Error('Invalid beneficiaries data received from server');
     }
-
     if (!Array.isArray(response.data.templates)) {
       throw new Error('Invalid templates data received from server');
     }
@@ -34,13 +38,25 @@ export const fetchInitData = async (): Promise<InitData> => {
   } catch (error: any) {
     if (error.response?.status === 401) {
       throw new Error('Session expired. Please login again.');
-    } else if (error.response?.status === 404) {
+    }
+    if (error.response?.status === 404) {
       throw new Error('Worker data not found. Please contact administrator.');
-    } else if (error.code === 'ECONNABORTED' || error.message === 'Network Error') {
-      throw new Error('Network error. Please check your internet connection and try again.');
-    } else if (error.response?.status >= 500) {
+    }
+    if (error.response?.status >= 500) {
       throw new Error('Server error. Please try again later.');
     }
+
+    // Network unavailable — return mock data for the logged-in worker
+    if (isNetworkError(error)) {
+      const { useAuthStore } = await import('../store/authStore');
+      const worker = useAuthStore.getState().worker;
+      if (worker?.id) {
+        console.log('[offline] Using mock init data for worker', worker.worker_id);
+        return getMockInitData(worker.id);
+      }
+      throw new Error('Network unavailable and no worker session found. Please login again.');
+    }
+
     throw new Error(error.message || 'Failed to fetch initialization data. Please try again.');
   }
 };

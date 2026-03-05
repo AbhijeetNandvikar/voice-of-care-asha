@@ -30,14 +30,13 @@ export default function LoginScreen({ navigation }: Props) {
     setValidationError('');
     clearError();
 
-    // Validate worker ID (8 digits)
     if (!workerId.trim()) {
       setValidationError('Worker ID is required');
       return false;
     }
 
-    if (!/^\d{8}$/.test(workerId.trim())) {
-      setValidationError('Worker ID must be exactly 8 digits');
+    if (workerId.trim().length < 3) {
+      setValidationError('Please enter a valid Worker ID');
       return false;
     }
 
@@ -110,10 +109,9 @@ export default function LoginScreen({ navigation }: Props) {
                   setValidationError('');
                   clearError();
                 }}
-                placeholder="Enter 8-digit Worker ID"
-                keyboardType="numeric"
-                maxLength={8}
-                autoCapitalize="none"
+                placeholder="e.g. AW000001"
+                keyboardType="default"
+                autoCapitalize="characters"
                 autoCorrect={false}
                 editable={!isLoading}
               />

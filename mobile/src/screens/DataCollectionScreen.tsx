@@ -13,8 +13,15 @@ import {
   Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';
+
+// expo-av requires a custom dev build in Expo SDK 52+; gracefully degrade in Expo Go
+let Audio: typeof import('expo-av').Audio | null = null;
+try {
+  Audio = require('expo-av').Audio;
+} catch {
+  // Running in Expo Go without expo-av native module — voice recording disabled
+}
 import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { VisitScreenProps } from '../navigation/types';
@@ -35,7 +42,7 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
   const [answers, setAnswers] = useState<Map<string, Answer>>(new Map());
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [recording, setRecording] = useState<any>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [showQuestionList, setShowQuestionList] = useState(false);
   const [numericInput, setNumericInput] = useState('');
@@ -64,6 +71,7 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
   }, []);
 
   const setupAudio = async () => {
+    if (!Audio) return;
     try {
       await Audio.requestPermissionsAsync();
       await Audio.setAudioModeAsync({
@@ -210,6 +218,13 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
 
   // Voice recording functionality
   const startRecording = async () => {
+    if (!Audio) {
+      Alert.alert(
+        'Not Available',
+        'Voice recording requires a development build. It is not available in Expo Go.'
+      );
+      return;
+    }
     try {
       const { status } = await Audio.requestPermissionsAsync();
       
@@ -495,7 +510,15 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
 
         {currentQuestion.input_type === 'voice' && (
           <View style={styles.answerSection}>
-            {!currentAnswer?.audio_path ? (
+            {!Audio ? (
+              <View style={styles.unavailableContainer}>
+                <Ionicons name="mic-off-outline" size={32} color="#999" />
+                <Text style={styles.unavailableText}>
+                  Voice recording is not available in Expo Go.{'\n'}
+                  A development build is required.
+                </Text>
+              </View>
+            ) : !currentAnswer?.audio_path ? (
               <TouchableOpacity
                 style={[styles.recordButton, isRecording && styles.recordButtonActive]}
                 onPressIn={startRecording}
@@ -818,6 +841,21 @@ const styles = StyleSheet.create({
     color: '#FF5252',
     marginTop: 8,
     textAlign: 'center',
+  },
+  unavailableContainer: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  unavailableText: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 20,
   },
   actionCard: {
     backgroundColor: '#FFF3E0',

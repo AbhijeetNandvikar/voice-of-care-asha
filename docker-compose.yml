@@ -29,8 +29,6 @@ services:
     environment:
       DATABASE_URL: postgresql://voice_of_care_user:${POSTGRES_PASSWORD:-changeme}@postgres:5432/voice_of_care
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_REGION: ${AWS_REGION:-ap-south-1}
       AWS_S3_BUCKET_AUDIO: ${AWS_S3_BUCKET_AUDIO:-voice-of-care-audio}
       AWS_S3_BUCKET_REPORTS: ${AWS_S3_BUCKET_REPORTS:-voice-of-care-reports}

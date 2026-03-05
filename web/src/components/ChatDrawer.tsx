@@ -4,7 +4,6 @@
  * Note: This is a placeholder for v1 - full implementation coming in future versions
  */
 
-import { useState } from 'react';
 import './ChatDrawer.css';
 
 interface ChatDrawerProps {

@@ -2,7 +2,7 @@
 Visits API endpoints for web dashboard
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
 from typing import List, Optional
@@ -37,7 +37,7 @@ async def get_visits(
         page: Page number (1-indexed)
         page_size: Number of items per page
         search: Search by MCTS_ID
-        worker_id: Filter by ASHA worker ID
+        worker_id: Filter by ASHA worker database ID
         start_date: Filter by start date
         end_date: Filter by end date
         current_worker: Authenticated worker from JWT token
@@ -45,7 +45,19 @@ async def get_visits(
         
     Returns:
         Paginated response with visits
+        
+    Raises:
+        HTTPException 404: If worker_id provided but worker not found
     """
+    # Validate worker_id if provided
+    if worker_id:
+        worker = db.query(Worker).filter(Worker.id == worker_id).first()
+        if not worker:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Worker with ID {worker_id} not found"
+            )
+    
     # Build query
     query = db.query(Visit).filter(Visit.is_synced == True)
     

@@ -36,7 +36,7 @@ class ReportService:
         visit_type: str,
         start_date: date,
         end_date: date,
-        worker_id: Optional[int],
+        worker_id: Optional[str],
         db: Session
     ) -> Dict[str, Any]:
         """
@@ -46,7 +46,7 @@ class ReportService:
             visit_type: Type of visit (hbnc, anc, pnc)
             start_date: Start date for report period
             end_date: End date for report period
-            worker_id: Optional worker ID to filter by specific ASHA worker
+            worker_id: Optional worker ID string (e.g., "AW000001") to filter by specific ASHA worker
             db: Database session
             
         Returns:
@@ -57,6 +57,14 @@ class ReportService:
             Exception: If report generation fails
         """
         try:
+            # Convert worker_id string to database ID if provided
+            worker_db_id = None
+            if worker_id:
+                worker = db.query(Worker).filter(Worker.worker_id == worker_id).first()
+                if not worker:
+                    raise ValueError(f"Worker with ID {worker_id} not found")
+                worker_db_id = worker.id
+            
             # Step 1: Query visits from database
             logger.info(
                 f"Generating {visit_type} report from {start_date} to {end_date}"
@@ -67,7 +75,7 @@ class ReportService:
                 visit_type=visit_type,
                 start_date=start_date,
                 end_date=end_date,
-                worker_id=worker_id,
+                worker_id=worker_db_id,
                 db=db
             )
             

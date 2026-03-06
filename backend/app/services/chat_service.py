@@ -54,8 +54,8 @@ TOOLS = [
                     "enum": ["hbnc", "anc", "pnc"]
                 },
                 "worker_id": {
-                    "type": "integer",
-                    "description": "Filter by worker database ID"
+                    "type": "string",
+                    "description": "Filter by worker ID (e.g., AW000001, MO000001)"
                 },
                 "days_back": {
                     "type": "integer",
@@ -84,8 +84,8 @@ TOOLS = [
                     "description": "Filter by type: individual, child, mother_child"
                 },
                 "assigned_asha_id": {
-                    "type": "integer",
-                    "description": "Filter by assigned ASHA worker ID"
+                    "type": "string",
+                    "description": "Filter by assigned ASHA worker ID (e.g., AW000001)"
                 },
                 "limit": {
                     "type": "integer",
@@ -170,6 +170,8 @@ def _execute_tool(tool_name: str, tool_input: Dict[str, Any], db: Session) -> st
             return json.dumps({"error": f"Unknown tool: {tool_name}"})
     except Exception as e:
         logger.error(f"Tool {tool_name} failed: {e}")
+        # Rollback the session to recover from failed transaction
+        db.rollback()
         return json.dumps({"error": str(e)})
 
 
@@ -192,7 +194,7 @@ def _get_dashboard_stats(db: Session) -> str:
 def _get_visits_summary(
     db: Session,
     visit_type: str = None,
-    worker_id: int = None,
+    worker_id: str = None,
     days_back: int = None,
     is_synced: bool = None
 ) -> str:
@@ -201,7 +203,18 @@ def _get_visits_summary(
     if visit_type:
         q = q.filter(Visit.visit_type == visit_type)
     if worker_id:
-        q = q.filter(Visit.assigned_asha_id == worker_id)
+        # Look up worker by worker_id string (e.g., "AW000001")
+        worker = db.query(Worker).filter(Worker.worker_id == worker_id).first()
+        if worker:
+            q = q.filter(Visit.assigned_asha_id == worker.id)
+        else:
+            # If worker not found, return empty result
+            return json.dumps({
+                "total_matching": 0,
+                "type_breakdown": {},
+                "recent_visits": [],
+                "error": f"Worker with ID {worker_id} not found"
+            })
     if days_back:
         cutoff = datetime.now(UTC) - timedelta(days=days_back)
         q = q.filter(Visit.visit_date_time >= cutoff)
@@ -243,7 +256,7 @@ def _get_beneficiaries(
     db: Session,
     name: str = None,
     beneficiary_type: str = None,
-    assigned_asha_id: int = None,
+    assigned_asha_id: str = None,
     limit: int = 20
 ) -> str:
     q = db.query(Beneficiary)
@@ -256,7 +269,17 @@ def _get_beneficiaries(
     if beneficiary_type:
         q = q.filter(Beneficiary.beneficiary_type == beneficiary_type)
     if assigned_asha_id:
-        q = q.filter(Beneficiary.assigned_asha_id == assigned_asha_id)
+        # Look up worker by worker_id string (e.g., "AW000001")
+        worker = db.query(Worker).filter(Worker.worker_id == assigned_asha_id).first()
+        if worker:
+            q = q.filter(Beneficiary.assigned_asha_id == worker.id)
+        else:
+            # If worker not found, return empty result
+            return json.dumps({
+                "total_matching": 0,
+                "beneficiaries": [],
+                "error": f"Worker with ID {assigned_asha_id} not found"
+            })
 
     total = q.count()
     results = q.limit(min(limit, 50)).all()

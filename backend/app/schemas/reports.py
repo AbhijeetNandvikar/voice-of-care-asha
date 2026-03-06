@@ -12,7 +12,7 @@ class ReportGenerateRequest(BaseModel):
     visit_type: str = Field(..., description="Type of visit: hbnc, anc, pnc")
     start_date: date = Field(..., description="Start date for report period")
     end_date: date = Field(..., description="End date for report period")
-    worker_id: Optional[int] = Field(None, description="Optional worker ID to filter by specific ASHA worker")
+    worker_id: Optional[str] = Field(None, description="Optional worker ID (e.g., AW000001) to filter by specific ASHA worker")
     
     @field_validator('visit_type')
     @classmethod

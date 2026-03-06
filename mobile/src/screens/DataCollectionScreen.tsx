@@ -217,8 +217,14 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
       setIsSpeaking(true);
       Speech.speak(text, {
         language: selectedLanguage === 'en' ? 'en-IN' : 'hi-IN',
+        pitch: 1.0,
+        rate: 0.9,
         onDone: () => setIsSpeaking(false),
-        onError: () => setIsSpeaking(false),
+        onError: (error) => {
+          console.error('TTS Error:', error);
+          setIsSpeaking(false);
+          Alert.alert('Error', 'Text-to-speech failed. Please try again.');
+        },
       });
     }
   };
@@ -395,6 +401,62 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
     return true;
   };
 
+  const handleSkip = async () => {
+    if (!template) return;
+    
+    const question = template.questions[currentQuestionIndex];
+    
+    if (question.is_required) {
+      Alert.alert('Cannot Skip', 'This question is required and cannot be skipped.');
+      return;
+    }
+
+    // Remove answer if it exists
+    const updatedAnswers = new Map(answers);
+    updatedAnswers.delete(question.id);
+    setAnswers(updatedAnswers);
+
+    // Move to next question
+    if (currentQuestionIndex < template.questions.length - 1) {
+      const nextIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(nextIndex);
+      setNumericInput('');
+      setNumericError('');
+      await saveDraft(updatedAnswers, nextIndex);
+    } else {
+      // Last question - create visit
+      await handleFinish(updatedAnswers);
+    }
+  };
+
+  const handleFinish = async (finalAnswers: Map<string, Answer>) => {
+    try {
+      // Convert answers Map to array
+      const answersArray = Array.from(finalAnswers.values());
+      
+      const visitData: VisitData = { answers: answersArray };
+      const newVisitId = await databaseService.createVisit({
+        visit_type: visitType,
+        visit_date_time: new Date().toISOString(),
+        day_number: dayNumber,
+        assigned_asha_id: worker!.id,
+        beneficiary_id: beneficiaryId,
+        template_id: templateId,
+        visit_data: visitData,
+      });
+      
+      console.log('[DataCollection] Visit created with ID:', newVisitId);
+      
+      // Clear draft after successful save
+      await clearDraft();
+      
+      navigation.navigate('Summary', { visitId: newVisitId });
+    } catch (error) {
+      console.error('Error creating visit:', error);
+      Alert.alert('Error', 'Failed to save visit. Please try again.');
+    }
+  };
+
   const handleNext = async () => {
     if (!template) return;
     
@@ -413,31 +475,7 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
       await saveDraft(answers, nextIndex);
     } else {
       // Last question - create visit and navigate to summary
-      try {
-        // Convert answers Map to array
-        const answersArray = Array.from(answers.values());
-        
-        const visitData: VisitData = { answers: answersArray };
-        const newVisitId = await databaseService.createVisit({
-          visit_type: visitType,
-          visit_date_time: new Date().toISOString(),
-          day_number: dayNumber,
-          assigned_asha_id: worker!.id,
-          beneficiary_id: beneficiaryId,
-          template_id: templateId,
-          visit_data: visitData,
-        });
-        
-        console.log('[DataCollection] Visit created with ID:', newVisitId);
-        
-        // Clear draft after successful save
-        await clearDraft();
-        
-        navigation.navigate('Summary', { visitId: newVisitId });
-      } catch (error) {
-        console.error('Error creating visit:', error);
-        Alert.alert('Error', 'Failed to save visit. Please try again.');
-      }
+      await handleFinish(answers);
     }
   };
 
@@ -476,7 +514,7 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.errorText}>No questions found in template</Text>
+          <Text style={styles.validationErrorText}>No questions found in template</Text>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
@@ -495,6 +533,14 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
   const currentQuestion = template.questions[currentQuestionIndex];
   const currentAnswer = answers.get(currentQuestion.id);
   const previousAnswer = previousAnswers.get(currentQuestion.id);
+  
+  // Log the raw question object to debug
+  console.log('[DataCollection] Raw question object keys:', Object.keys(currentQuestion));
+  console.log('[DataCollection] question_en:', currentQuestion.question_en);
+  console.log('[DataCollection] question_hi:', currentQuestion.question_hi);
+  console.log('[DataCollection] action_en:', currentQuestion.action_en);
+  console.log('[DataCollection] action_hi:', currentQuestion.action_hi);
+  
   // Support both new format (question_en/question_hi/input_type) and legacy format (text/type)
   const rawQuestion = currentQuestion as any;
   // Map legacy type values to expected input_type values
@@ -504,11 +550,12 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
     ? (currentQuestion.question_en || rawQuestion.text)
     : (currentQuestion.question_hi || rawQuestion.text);
   const actionText = selectedLanguage === 'en'
-    ? (currentQuestion.action_en || rawQuestion.action)
-    : (currentQuestion.action_hi || rawQuestion.action);
+    ? (currentQuestion.action_en || rawQuestion.action || null)
+    : (currentQuestion.action_hi || rawQuestion.action || null);
   
   console.log('[DataCollection] Question text:', questionText);
   console.log('[DataCollection] Action text:', actionText);
+  console.log('[DataCollection] Selected language:', selectedLanguage);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -520,13 +567,21 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
         <Text style={styles.progress}>
           Question {currentQuestionIndex + 1} of {template.questions.length}
         </Text>
-        <TouchableOpacity onPress={async () => {
-          const newLang = selectedLanguage === 'en' ? 'hi' : 'en';
-          setSelectedLanguage(newLang);
-          // Save draft with new language
-          await saveDraft(answers, currentQuestionIndex);
-        }}>
-          <Text style={styles.languageToggle}>{selectedLanguage === 'en' ? 'हिं' : 'EN'}</Text>
+        <TouchableOpacity 
+          onPress={async () => {
+            const newLang = selectedLanguage === 'en' ? 'hi' : 'en';
+            setSelectedLanguage(newLang);
+            // Stop any ongoing speech
+            Speech.stop();
+            setIsSpeaking(false);
+            // Save draft with new language
+            await saveDraft(answers, currentQuestionIndex);
+          }}
+          style={styles.languageToggleButton}
+        >
+          <Text style={styles.languageToggle}>
+            {selectedLanguage === 'en' ? 'हिं' : 'EN'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -688,6 +743,16 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
           </Text>
         </TouchableOpacity>
 
+        {!currentQuestion.is_required && (
+          <TouchableOpacity
+            style={styles.skipButton}
+            onPress={handleSkip}
+          >
+            <Ionicons name="arrow-forward-circle-outline" size={20} color="#FF9800" />
+            <Text style={styles.skipButtonText}>Skip</Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           style={[styles.navButton, !canNavigateNext() && styles.navButtonDisabled]}
           onPress={handleNext}
@@ -770,7 +835,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  errorText: {
+  validationErrorText: {
     fontSize: 16,
     color: '#d32f2f',
     textAlign: 'center',
@@ -801,6 +866,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
+  languageToggleButton: {
+    padding: 8,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 8,
+  },
   languageToggle: {
     fontSize: 16,
     fontWeight: '600',
@@ -811,6 +881,8 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   questionCard: {
     backgroundColor: '#fff',
@@ -1013,6 +1085,7 @@ const styles = StyleSheet.create({
   navigationBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 16,
     backgroundColor: '#fff',
     borderTopWidth: 1,
@@ -1034,6 +1107,22 @@ const styles = StyleSheet.create({
   },
   navButtonTextDisabled: {
     color: '#ccc',
+  },
+  skipButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3E0',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#FF9800',
+  },
+  skipButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FF9800',
   },
   modalOverlay: {
     flex: 1,

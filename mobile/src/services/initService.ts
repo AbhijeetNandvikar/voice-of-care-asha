@@ -1,7 +1,6 @@
 import api from './api';
 import databaseService from './databaseService';
 import { InitData } from '../types';
-import { getMockInitData } from '../data/mockData';
 
 /**
  * Initialization Service
@@ -46,15 +45,8 @@ export const fetchInitData = async (): Promise<InitData> => {
       throw new Error('Server error. Please try again later.');
     }
 
-    // Network unavailable — return mock data for the logged-in worker
     if (isNetworkError(error)) {
-      const { useAuthStore } = await import('../store/authStore');
-      const worker = useAuthStore.getState().worker;
-      if (worker?.id) {
-        console.log('[offline] Using mock init data for worker', worker.worker_id);
-        return getMockInitData(worker.id);
-      }
-      throw new Error('Network unavailable and no worker session found. Please login again.');
+      throw new Error('Network unavailable. Please check your internet connection and try again.');
     }
 
     throw new Error(error.message || 'Failed to fetch initialization data. Please try again.');

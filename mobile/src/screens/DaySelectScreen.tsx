@@ -44,17 +44,27 @@ export default function DaySelectScreen({ navigation, route }: Props) {
       }
       setTemplate(loadedTemplate);
 
-      // Load completed visits for this beneficiary
-      const visits = await databaseService.getVisits({
-        beneficiary_id: beneficiaryId,
-      });
+      // For HBNC, load completed day numbers
+      if (visitType === 'hbnc') {
+        const visits = await databaseService.getVisits({
+          beneficiary_id: beneficiaryId,
+        });
 
-      // Extract completed day numbers for HBNC visits
-      const completed = visits
-        .filter((visit: Visit) => visit.visit_type === 'hbnc' && visit.day_number)
-        .map((visit: Visit) => visit.day_number!);
+        // Extract completed day numbers for HBNC visits
+        const completed = visits
+          .filter((visit: Visit) => visit.visit_type === 'hbnc' && visit.day_number)
+          .map((visit: Visit) => visit.day_number!);
 
-      setCompletedDays(completed);
+        setCompletedDays(completed);
+      } else {
+        // For ANC/PNC, proceed directly to data collection
+        navigation.replace('DataCollection', {
+          visitType,
+          beneficiaryId,
+          dayNumber: undefined,
+          templateId: loadedTemplate.id,
+        });
+      }
     } catch (error) {
       console.error('Error loading data:', error);
       Alert.alert('Error', 'Failed to load visit data. Please try again.');

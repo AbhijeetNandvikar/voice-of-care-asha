@@ -50,10 +50,8 @@ async def mobile_init(
         Beneficiary.assigned_asha_id == current_worker.id
     ).all()
     
-    # Query all HBNC templates (v1 only supports HBNC)
-    templates = db.query(VisitTemplate).filter(
-        VisitTemplate.template_type == "hbnc"
-    ).all()
+    # Query all visit templates (HBNC, ANC, PNC)
+    templates = db.query(VisitTemplate).all()
     
     # Format worker profile
     worker_data = {

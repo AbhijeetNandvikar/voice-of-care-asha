@@ -2,7 +2,6 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from './api';
 import { AuthResponse } from '../types';
-import { findMockWorker, MOCK_WORKERS } from '../data/mockData';
 
 // SecureStore keys
 const TOKEN_KEY = 'auth_token';
@@ -19,7 +18,7 @@ const isNetworkError = (error: any): boolean =>
 
 /**
  * Login with worker ID and password.
- * Falls back to mock credentials when the backend is unreachable.
+ * Requires active internet connection to authenticate with backend.
  */
 export const login = async (
   workerId: string,
@@ -27,7 +26,6 @@ export const login = async (
 ): Promise<AuthResponse> => {
   console.log('[authService] Attempting login for worker:', workerId);
   
-  // Try backend first
   try {
     console.log('[authService] Trying backend API...');
     const response = await api.post<AuthResponse>('/auth/login', {
@@ -51,20 +49,8 @@ export const login = async (
       throw new Error('Account is not authorized');
     }
 
-    // Network unavailable — try offline mock credentials
     if (isNetworkError(error)) {
-      console.log('[authService] Network error detected, trying offline mode...');
-      const mockWorker = findMockWorker(workerId, password);
-      if (mockWorker) {
-        console.log('[authService] Mock worker found:', mockWorker.worker_id);
-        const mockToken = `mock_offline_${mockWorker.worker_id}`;
-        await SecureStore.setItemAsync(TOKEN_KEY, mockToken);
-        await SecureStore.setItemAsync(WORKER_KEY, JSON.stringify(mockWorker));
-
-        return { access_token: mockToken, token_type: 'bearer', worker: mockWorker };
-      }
-      console.log('[authService] Mock worker not found for:', workerId);
-      throw new Error('Network unavailable and worker ID / password not recognised in offline mode.');
+      throw new Error('Network unavailable. Please check your internet connection and try again.');
     }
 
     throw new Error(error.response?.data?.detail || 'Login failed. Please try again.');
@@ -149,13 +135,12 @@ export const verifyMPIN = async (
       if (storedMpin && storedMpin === mpin) {
         // Re-use the stored worker data
         const workerData = await getStoredWorker();
-        const mockWorker = workerData ?? MOCK_WORKERS.find((w) => w.worker_id === workerId);
-        if (!mockWorker) {
+        if (!workerData) {
           throw new Error('Worker data not found. Please login with password.');
         }
         const mockToken = `mock_offline_${workerId}`;
         await SecureStore.setItemAsync(TOKEN_KEY, mockToken);
-        return { access_token: mockToken, token_type: 'bearer', worker: mockWorker };
+        return { access_token: mockToken, token_type: 'bearer', worker: workerData };
       }
       if (storedMpin) {
         throw new Error('Invalid MPIN');

@@ -121,7 +121,7 @@ export default function ProfileScreen() {
   const handleClearAndResync = () => {
     Alert.alert(
       'Clear Data & Re-sync',
-      'This will clear all local data and re-download from the server. Any unsynced visits will be lost. Continue?',
+      'This will clear all local data and re-download from the server. Any unsynced visits will be lost. You must be online to re-sync. Continue?',
       [
         {
           text: 'Cancel',
@@ -142,10 +142,22 @@ export default function ProfileScreen() {
               await initService.initializeApp();
               console.log('[ProfileScreen] Re-initialization complete');
               
-              Alert.alert('Success', 'Data cleared and re-synced successfully!');
-            } catch (error) {
+              Alert.alert('Success', 'Data cleared and re-synced successfully! Please restart the app.');
+            } catch (error: any) {
               console.error('Clear and resync error:', error);
-              Alert.alert('Error', 'Failed to clear and re-sync data. Please try again.');
+              
+              // Provide more specific error messages
+              let errorMessage = 'Failed to clear and re-sync data.';
+              
+              if (error.message?.includes('Network') || error.message?.includes('network')) {
+                errorMessage = 'Network unavailable. Please check your internet connection and try again.';
+              } else if (error.message?.includes('Session expired')) {
+                errorMessage = 'Session expired. Please logout and login again.';
+              } else if (error.message) {
+                errorMessage = error.message;
+              }
+              
+              Alert.alert('Error', errorMessage);
             } finally {
               setLoadingEarnings(false);
             }
@@ -194,8 +206,8 @@ export default function ProfileScreen() {
           ) : (
             <View style={styles.profilePhotoPlaceholder}>
               <Text style={styles.profilePhotoInitials}>
-                {worker.first_name.charAt(0)}
-                {worker.last_name.charAt(0)}
+                {worker.first_name?.charAt(0) || ''}
+                {worker.last_name?.charAt(0) || ''}
               </Text>
             </View>
           )}

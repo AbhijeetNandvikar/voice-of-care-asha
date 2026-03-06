@@ -2,17 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
 import { login as apiLogin, setupMPIN as apiSetupMPIN, verifyMPIN as apiVerifyMPIN } from '../services/authService';
-
-interface Worker {
-  id: number;
-  first_name: string;
-  last_name: string;
-  worker_id: string;
-  worker_type: string;
-  email?: string;
-  phone_number?: string;
-  mpin_hash?: string;
-}
+import { Worker } from '../types';
 
 interface AuthState {
   token: string | null;

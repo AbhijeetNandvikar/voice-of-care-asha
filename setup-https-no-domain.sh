@@ -53,8 +53,14 @@ fi
 # Create SSL directory
 echo ""
 echo "Creating SSL directory..."
-mkdir -p ~/voice-of-care-asha/nginx/ssl
 cd ~/voice-of-care-asha
+mkdir -p nginx/ssl
+
+# Check if directory is writable
+if [ ! -w nginx/ssl ]; then
+    echo -e "${YELLOW}SSL directory not writable, fixing permissions...${NC}"
+    sudo chown -R $USER:$USER nginx/ssl
+fi
 
 # Generate self-signed certificate
 echo ""
@@ -62,11 +68,18 @@ echo "Generating self-signed certificate..."
 echo "This certificate will be valid for 365 days"
 echo ""
 
+# Generate in temp location first
+TEMP_DIR=$(mktemp -d)
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout nginx/ssl/key.pem \
-  -out nginx/ssl/cert.pem \
+  -keyout "$TEMP_DIR/key.pem" \
+  -out "$TEMP_DIR/cert.pem" \
   -subj "/C=IN/ST=State/L=City/O=VoiceOfCare/CN=$PUBLIC_IP" \
   -addext "subjectAltName=IP:$PUBLIC_IP"
+
+# Move to final location
+mv "$TEMP_DIR/key.pem" nginx/ssl/key.pem
+mv "$TEMP_DIR/cert.pem" nginx/ssl/cert.pem
+rm -rf "$TEMP_DIR"
 
 chmod 644 nginx/ssl/cert.pem
 chmod 600 nginx/ssl/key.pem

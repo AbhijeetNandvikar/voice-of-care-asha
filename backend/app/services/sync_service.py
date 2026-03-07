@@ -3,12 +3,12 @@ Sync Service for Voice of Care
 Handles visit synchronization from mobile devices to backend
 """
 
-import copy
 import logging
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime, UTC
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.models.visit import Visit
 from app.models.sync_log import SyncLog
@@ -400,7 +400,6 @@ class SyncService:
 
                 try:
                     transcript_text = self.transcribe_service.get_transcription_result(job_name)
-                    print(transcript_text)
                     if transcript_text is None:
                         # Job still running or failed — leave job_name in place
                         counts["still_pending"] += 1
@@ -447,8 +446,8 @@ class SyncService:
                     counts["failed"] += 1
             
             if visit_dirty:
-                # SQLAlchemy won't detect in-place JSON mutations automatically
-                visit.visit_data = copy.deepcopy(visit.visit_data)
+                # Explicitly tell SQLAlchemy this JSON column has changed
+                flag_modified(visit, 'visit_data')
 
         db.commit()
         logger.info(f"Transcription poll complete: {counts}")

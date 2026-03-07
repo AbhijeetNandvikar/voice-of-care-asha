@@ -106,7 +106,7 @@ export default function SummaryScreen({ navigation, route }: Props) {
     navigation.navigate('DataCollection', {
       visitType: visit!.visit_type,
       beneficiaryId: visit!.beneficiary_id,
-      dayNumber: visit!.day_number || 1,
+      dayNumber: visit!.day_number,
       templateId: visit!.template_id,
     });
   };

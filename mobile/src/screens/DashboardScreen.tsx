@@ -35,21 +35,27 @@ export default function DashboardScreen() {
   const [syncing, setSyncing] = useState(false);
   const [hasOfflineToken, setHasOfflineToken] = useState(false);
 
-  // Load dashboard data
-  const loadDashboardData = async () => {
+  // Load dashboard data with cancellation support
+  const loadDashboardData = async (signal?: AbortSignal) => {
     try {
       if (!worker) return;
 
+      // Check if cancelled
+      if (signal?.aborted) return;
+
       // Check if user has offline token
       const isOffline = await syncService.hasOfflineToken();
+      if (signal?.aborted) return;
       setHasOfflineToken(isOffline);
 
       // Get pending sync count
       const count = await databaseService.getPendingVisitsCount();
+      if (signal?.aborted) return;
       setPendingSyncCount(count);
 
       // Get assigned beneficiaries
       const allBeneficiaries = await databaseService.getBeneficiaries(worker.id);
+      if (signal?.aborted) return;
       console.log('[DashboardScreen] Loaded beneficiaries:', allBeneficiaries.length);
 
       // Get today's visits to determine status
@@ -65,6 +71,7 @@ export default function DashboardScreen() {
         start_date: todayStart,
         end_date: todayEnd,
       });
+      if (signal?.aborted) return;
 
       // Map beneficiaries with visit status
       const beneficiariesWithStatus: BeneficiaryWithStatus[] = allBeneficiaries.map(
@@ -76,16 +83,22 @@ export default function DashboardScreen() {
         })
       );
 
+      if (signal?.aborted) return;
       setBeneficiaries(beneficiariesWithStatus);
     } catch (error) {
+      // Don't show error if operation was cancelled
+      if (signal?.aborted) return;
+      
       console.error('Error loading dashboard data:', error);
       Alert.alert(
         t('error'),
         t('failed_to_load_dashboard_data')
       );
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   };
 
@@ -120,7 +133,13 @@ export default function DashboardScreen() {
   // Load data on mount and when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      loadDashboardData();
+      const abortController = new AbortController();
+      loadDashboardData(abortController.signal);
+      
+      // Cleanup function to cancel ongoing operations
+      return () => {
+        abortController.abort();
+      };
     }, [worker])
   );
 

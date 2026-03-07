@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
   ActivityIndicator,
   Modal,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { VisitScreenProps } from '../navigation/types';
 import databaseService from '../services/databaseService';
 import { Visit, VisitTemplate } from '../types';
@@ -17,6 +17,13 @@ import { Visit, VisitTemplate } from '../types';
 type Props = VisitScreenProps<'DaySelect'>;
 
 const HBNC_DAYS = [1, 3, 7, 14, 28];
+
+// Visit type day configurations
+const VISIT_DAY_CONFIG: Record<string, number[]> = {
+  hbnc: [1, 3, 7, 14, 28],
+  anc: [], // ANC doesn't use day numbers
+  pnc: [], // PNC doesn't use day numbers
+};
 
 export default function DaySelectScreen({ navigation, route }: Props) {
   const { visitType, beneficiaryId, beneficiaryName, mctsId } = route.params;
@@ -26,6 +33,7 @@ export default function DaySelectScreen({ navigation, route }: Props) {
   const [template, setTemplate] = useState<VisitTemplate | null>(null);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [validDays, setValidDays] = useState<number[]>([]);
 
   useEffect(() => {
     loadData();
@@ -43,6 +51,18 @@ export default function DaySelectScreen({ navigation, route }: Props) {
         return;
       }
       setTemplate(loadedTemplate);
+
+      // Get valid days for this visit type
+      const daysForType = VISIT_DAY_CONFIG[visitType] || [];
+      
+      // Validate that we have valid days for this visit type
+      if (visitType === 'hbnc' && daysForType.length === 0) {
+        Alert.alert('Error', 'Invalid visit type configuration.');
+        navigation.goBack();
+        return;
+      }
+      
+      setValidDays(daysForType);
 
       // For HBNC, load completed day numbers
       if (visitType === 'hbnc') {
@@ -74,6 +94,12 @@ export default function DaySelectScreen({ navigation, route }: Props) {
   };
 
   const handleDaySelect = (day: number) => {
+    // Validate day is in valid days list
+    if (!validDays.includes(day)) {
+      Alert.alert('Invalid Day', `Day ${day} is not valid for ${visitType.toUpperCase()} visits.`);
+      return;
+    }
+
     // Check if day was already completed
     if (completedDays.includes(day)) {
       setSelectedDay(day);
@@ -132,7 +158,7 @@ export default function DaySelectScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.daysContainer}>
-          {HBNC_DAYS.map((day) => {
+          {validDays.map((day) => {
             const isCompleted = completedDays.includes(day);
             return (
               <TouchableOpacity

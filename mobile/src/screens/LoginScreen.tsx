@@ -62,10 +62,11 @@ export default function LoginScreen({ navigation }: Props) {
     try {
       await login(workerId.trim(), password);
 
-      // After successful login, check if MPIN is set up
-      const worker = useAuthStore.getState().worker;
+      // After successful login, check if MPIN is set up from the store state
+      // The login action updates hasMPIN based on worker.mpin_hash and local storage
+      const { hasMPIN } = useAuthStore.getState();
       
-      if (worker?.mpin_hash) {
+      if (hasMPIN) {
         // MPIN already set up, navigate to MPIN verification
         navigation.navigate('MPINVerify');
       } else {

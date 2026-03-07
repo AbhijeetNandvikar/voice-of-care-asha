@@ -23,7 +23,7 @@ try {
 } catch {
   // Running in Expo Go without expo-av native module — voice recording disabled
 }
-import * as FileSystem from 'expo-file-system';
+import { File, Directory, Paths } from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { VisitScreenProps } from '../navigation/types';
 import databaseService from '../services/databaseService';
@@ -53,6 +53,7 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
   const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'hi'>('en');
 
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingRef = useRef<any>(null);
   
   // Draft key for persistence
   const draftKey = `visit_draft_${beneficiaryId}_${dayNumber}_${visitType}`;
@@ -64,9 +65,9 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
     setupAudio();
     
     return () => {
-      // Cleanup
-      if (recording) {
-        recording.stopAndUnloadAsync();
+      // Cleanup - use ref so we access the live recording, not a stale closure
+      if (recordingRef.current) {
+        recordingRef.current.stopAndUnloadAsync();
       }
       Speech.stop();
       if (recordingTimerRef.current) {
@@ -188,15 +189,18 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
 
   const saveAnswer = async (questionId: string, answer: Answer) => {
     try {
+      console.log('[SaveAnswer] Saving answer for question:', questionId, answer);
       const updatedAnswers = new Map(answers);
       updatedAnswers.set(questionId, answer);
       setAnswers(updatedAnswers);
 
       // Save draft immediately (no visit ID needed yet)
       await saveDraft(updatedAnswers, currentQuestionIndex);
+      console.log('[SaveAnswer] Answer saved successfully');
     } catch (error) {
-      console.error('Error saving answer:', error);
+      console.error('[SaveAnswer] Error saving answer:', error);
       Alert.alert('Error', 'Failed to save answer');
+      throw error;
     }
   };
 
@@ -276,9 +280,11 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
       return;
     }
     try {
+      console.log('[Recording] Requesting permissions...');
       const { status } = await Audio.requestPermissionsAsync();
       
       if (status !== 'granted') {
+        console.log('[Recording] Permission denied');
         Alert.alert(
           'Permission Required',
           'Microphone permission is required to record audio. Please enable it in settings.',
@@ -290,32 +296,48 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
         return;
       }
 
+      console.log('[Recording] Setting audio mode...');
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
 
+      console.log('[Recording] Creating recording...');
       const { recording: newRecording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       
+      console.log('[Recording] Recording started successfully');
       setRecording(newRecording);
+      recordingRef.current = newRecording;
       setIsRecording(true);
       setRecordingDuration(0);
 
       // Start timer for auto-stop after 60 seconds
       recordingTimerRef.current = setInterval(() => {
         setRecordingDuration(prev => {
-          if (prev >= 60) {
-            stopRecording();
+          const newDuration = prev + 1;
+          if (newDuration >= 60) {
+            // Clear interval first
+            if (recordingTimerRef.current) {
+              clearInterval(recordingTimerRef.current);
+              recordingTimerRef.current = null;
+            }
+            // Stop recording on next tick with error handling
+            setTimeout(() => {
+              stopRecording().catch((error) => {
+                console.error('[Recording] Error in auto-stop:', error);
+                Alert.alert('Error', 'Failed to stop recording automatically');
+              });
+            }, 0);
             return 60;
           }
-          return prev + 1;
+          return newDuration;
         });
       }, 1000);
     } catch (error) {
-      console.error('Error starting recording:', error);
-      Alert.alert('Error', 'Failed to start recording');
+      console.error('[Recording] Error starting recording:', error);
+      Alert.alert('Error', `Failed to start recording: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -329,29 +351,55 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
         recordingTimerRef.current = null;
       }
 
+      console.log('[Recording] Stopping recording...');
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
       
+      console.log('[Recording] Recording URI:', uri);
+      
       if (!uri) {
-        Alert.alert('Error', 'Failed to save recording');
+        console.error('[Recording] No URI returned from recording');
+        Alert.alert('Error', 'Failed to save recording - no audio file');
+        setRecording(null);
         return;
       }
 
       // Save audio file to permanent location
       const question = template.questions[currentQuestionIndex];
-      const audioDir = `${FileSystem.documentDirectory}audio/draft_${beneficiaryId}_${dayNumber}`;
-      
+      const audioDir = new Directory(Paths.document, `audio/draft_${beneficiaryId}_${dayNumber}`);
+
+      console.log('[Recording] Creating directory:', audioDir.uri);
+
       // Create directory if it doesn't exist
-      const dirInfo = await FileSystem.getInfoAsync(audioDir);
-      if (!dirInfo.exists) {
-        await FileSystem.makeDirectoryAsync(audioDir, { intermediates: true });
+      try {
+        if (!audioDir.exists) {
+          audioDir.create();
+          console.log('[Recording] Directory created');
+        } else {
+          console.log('[Recording] Directory already exists');
+        }
+      } catch (dirError) {
+        console.error('[Recording] Error creating directory:', dirError);
+        throw dirError;
       }
 
-      const audioPath = `${audioDir}/q_${question.id}.m4a`;
-      await FileSystem.moveAsync({
-        from: uri,
-        to: audioPath,
-      });
+      const audioFile = new File(audioDir, `q_${question.id}.m4a`);
+      const audioPath = audioFile.uri;
+      console.log('[Recording] Moving file from', uri, 'to', audioPath);
+
+      try {
+        // Check if target file already exists and delete it
+        if (audioFile.exists) {
+          console.log('[Recording] Target file exists, deleting...');
+          audioFile.delete();
+        }
+
+        new File(uri).move(audioFile);
+        console.log('[Recording] File moved successfully');
+      } catch (moveError) {
+        console.error('[Recording] Error moving file:', moveError);
+        throw moveError;
+      }
 
       // Save answer with audio path
       const answer: Answer = {
@@ -361,11 +409,16 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
         recorded_at: new Date().toISOString(),
       };
       
+      console.log('[Recording] Saving answer:', answer);
       await saveAnswer(question.id, answer);
+      console.log('[Recording] Recording saved successfully');
       setRecording(null);
+      recordingRef.current = null;
     } catch (error) {
-      console.error('Error stopping recording:', error);
-      Alert.alert('Error', 'Failed to save recording');
+      console.error('[Recording] Error stopping recording:', error);
+      Alert.alert('Error', `Failed to save recording: ${error.message || 'Unknown error'}`);
+      setRecording(null);
+      recordingRef.current = null;
     }
   };
 
@@ -378,7 +431,10 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
     if (currentAnswer?.audio_path) {
       try {
         // Delete old audio file
-        await FileSystem.deleteAsync(currentAnswer.audio_path, { idempotent: true });
+        const oldFile = new File(currentAnswer.audio_path);
+        if (oldFile.exists) {
+          oldFile.delete();
+        }
       } catch (error) {
         console.error('Error deleting old recording:', error);
       }
@@ -491,11 +547,12 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
     }
   };
 
-  const handleQuestionSelect = (index: number) => {
+  const handleQuestionSelect = async (index: number) => {
     setCurrentQuestionIndex(index);
     setShowQuestionList(false);
     setNumericInput('');
     setNumericError('');
+    await saveDraft(answers, index);
   };
 
   if (loading || !template) {
@@ -663,15 +720,29 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
             <TextInput
               style={[styles.numericInput, numericError && styles.numericInputError]}
               value={numericInput || (currentAnswer?.answer ? String(currentAnswer.answer) : '')}
-              onChangeText={setNumericInput}
+              onChangeText={(text) => {
+                setNumericInput(text);
+                // Clear error when user types
+                setNumericError('');
+              }}
               keyboardType="numeric"
               placeholder="Enter number"
               placeholderTextColor="#999"
             />
             {numericError && <Text style={styles.errorText}>{numericError}</Text>}
-            <TouchableOpacity style={styles.saveButton} onPress={handleNumericAnswer}>
-              <Text style={styles.saveButtonText}>Save Answer</Text>
-            </TouchableOpacity>
+            {(!currentAnswer || numericInput) && (
+              <TouchableOpacity style={styles.saveButton} onPress={handleNumericAnswer}>
+                <Text style={styles.saveButtonText}>
+                  {currentAnswer ? 'Update Answer' : 'Save Answer'}
+                </Text>
+              </TouchableOpacity>
+            )}
+            {currentAnswer && !numericInput && (
+              <View style={styles.savedIndicator}>
+                <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+                <Text style={styles.savedText}>Answer saved</Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -990,6 +1061,20 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  savedIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E8F5E9',
+    borderRadius: 8,
+    padding: 16,
+  },
+  savedText: {
+    fontSize: 16,
+    color: '#2E7D32',
+    marginLeft: 8,
     fontWeight: '600',
   },
   recordButton: {

@@ -1,21 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-/**
- * Worker profile interface
- */
-export interface Worker {
-  id: number;
-  first_name: string;
-  last_name: string;
-  worker_id: string;
-  worker_type: string;
-  phone_number: string;
-  email?: string;
-  collection_center_id?: number;
-  profile_photo_url?: string;
-}
+import { Worker } from '../types';
 
 /**
  * App state interface

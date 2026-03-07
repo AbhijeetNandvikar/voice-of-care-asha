@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
 import api from './api';
 import databaseService from './databaseService';
@@ -109,15 +109,18 @@ class SyncService {
       // Add visits JSON to form data
       formData.append('visits_json', JSON.stringify(visitsArray));
 
+      // Track file upload failures
+      const fileUploadErrors: Array<{ visitId: number; questionId: string; error: string }> = [];
+
       // Add audio files to form data
       for (const visit of pendingVisits) {
         for (const answer of visit.visit_data.answers) {
           if (answer.audio_path) {
             try {
               // Check if file exists
-              const fileInfo = await FileSystem.getInfoAsync(answer.audio_path);
-              
-              if (fileInfo.exists) {
+              const audioFile = new File(answer.audio_path);
+
+              if (audioFile.exists) {
                 // Create file key that matches backend expectation
                 const fileKey = `${visit.id}_${answer.question_id}`;
                 
@@ -129,13 +132,31 @@ class SyncService {
                   name: `${fileKey}.m4a`,
                 } as any);
               } else {
-                console.warn(`Audio file not found: ${answer.audio_path}`);
+                const errorMsg = `Audio file not found: ${answer.audio_path}`;
+                console.warn(errorMsg);
+                fileUploadErrors.push({
+                  visitId: visit.id,
+                  questionId: answer.question_id,
+                  error: 'File not found',
+                });
               }
             } catch (error) {
-              console.error(`Error reading audio file ${answer.audio_path}:`, error);
+              const errorMsg = `Error reading audio file ${answer.audio_path}: ${error}`;
+              console.error(errorMsg);
+              fileUploadErrors.push({
+                visitId: visit.id,
+                questionId: answer.question_id,
+                error: error.message || 'Failed to read file',
+              });
             }
           }
         }
+      }
+
+      // If there are critical file upload errors, warn the user
+      if (fileUploadErrors.length > 0) {
+        console.warn(`[Sync] ${fileUploadErrors.length} audio files could not be uploaded`);
+        // Continue with sync but log the issues
       }
 
       // Upload to backend with extended timeout (5 minutes)
@@ -167,12 +188,20 @@ class SyncService {
         message: failure.error_message,
       }));
 
+      // Add file upload errors to the error list
+      fileUploadErrors.forEach((fileError) => {
+        errors.push({
+          visitId: fileError.visitId,
+          message: `Audio file error (Q${fileError.questionId}): ${fileError.error}`,
+        });
+      });
+
       console.log(
-        `Sync completed: ${synced_visit_ids.length} succeeded, ${failed_visits.length} failed`
+        `Sync completed: ${synced_visit_ids.length} succeeded, ${failed_visits.length} failed, ${fileUploadErrors.length} file errors`
       );
 
       return {
-        success: failed_visits.length === 0,
+        success: failed_visits.length === 0 && fileUploadErrors.length === 0,
         syncedCount: synced_visit_ids.length,
         failedCount: failed_visits.length,
         errors,
@@ -271,9 +300,9 @@ class SyncService {
       // Add audio files
       for (const answer of visit.visit_data.answers) {
         if (answer.audio_path) {
-          const fileInfo = await FileSystem.getInfoAsync(answer.audio_path);
-          
-          if (fileInfo.exists) {
+          const audioFile = new File(answer.audio_path);
+
+          if (audioFile.exists) {
             const fileKey = `${visit.id}_${answer.question_id}`;
             
             // @ts-ignore

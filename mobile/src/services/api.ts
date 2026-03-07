@@ -1,11 +1,10 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import Constants from 'expo-constants';
 
 // API base URL - update this based on your backend deployment
 const API_BASE_URL = __DEV__ 
-  ? 'http://43.204.24.107:8000/api/v1'  // Development/Production backend
-  : 'http://43.204.24.107:8000/api/v1';
+  ? 'https://bharatcred.com/api/v1'  // Development/Production backend
+  : 'https://bharatcred.com/api/v1';
 
 console.log('[API] Using base URL:', API_BASE_URL);
 

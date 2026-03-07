@@ -43,12 +43,7 @@ const InitializationScreen: React.FC<Props> = ({ navigation }) => {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       setProgress('Initialization complete!');
-      
-      // Navigate to main app (will be handled by RootNavigator based on auth state)
-      // The auth state is already set, so navigation will automatically switch to Main
-      setTimeout(() => {
-        // No need to navigate - the RootNavigator will handle this based on isAuthenticated
-      }, 500);
+      // Navigation handled automatically by RootNavigator reacting to isAuthenticated state
       
     } catch (err: any) {
       console.error('Initialization error:', err);

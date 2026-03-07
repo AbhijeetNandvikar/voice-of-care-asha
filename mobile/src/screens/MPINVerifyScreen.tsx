@@ -97,6 +97,18 @@ const MPINVerifyScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   /**
+   * Auto-submit when mpin reaches 4 digits (uses fresh state, not stale closure)
+   */
+  useEffect(() => {
+    if (mpin.length === 4 && !isLoading) {
+      const timer = setTimeout(() => {
+        handleVerifyMpin();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [mpin]);
+
+  /**
    * Handle MPIN input change
    */
   const handleMpinChange = (text: string) => {
@@ -105,14 +117,6 @@ const MPINVerifyScreen: React.FC<Props> = ({ navigation }) => {
     if (digits.length <= 4) {
       setMpin(digits);
       setError('');
-    }
-
-    // Auto-submit when 4 digits are entered
-    if (digits.length === 4) {
-      // Small delay to show the 4th digit before submitting
-      setTimeout(() => {
-        handleVerifyMpin();
-      }, 100);
     }
   };
 

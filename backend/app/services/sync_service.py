@@ -247,12 +247,15 @@ class SyncService:
             question_id = answer.get('question_id')
             
             # Check if this answer has an audio file
-            audio_path = answer.get('audio_path')
-            if not audio_path:
-                logger.debug(f"Question {question_id}: No audio_path field, skipping")
+            # Mobile app sends audio_s3_key to indicate audio should be uploaded
+            audio_s3_key = answer.get('audio_s3_key')
+            audio_path = answer.get('audio_path')  # Legacy support
+            
+            if not audio_s3_key and not audio_path:
+                logger.debug(f"Question {question_id}: No audio_s3_key or audio_path field, skipping")
                 continue
             
-            logger.info(f"Question {question_id}: Has audio_path={audio_path}, looking for uploaded file")
+            logger.info(f"Question {question_id}: Has audio indicator (audio_s3_key={audio_s3_key}, audio_path={audio_path}), looking for uploaded file")
             
             if not question_id:
                 logger.warning(f"Answer missing question_id, skipping audio processing")
@@ -268,9 +271,9 @@ class SyncService:
                     f"Available keys: {list(audio_files.keys())}. "
                     f"This answer will be saved WITHOUT audio."
                 )
-                # Remove audio_path since we couldn't upload it
-                if 'audio_path' in answer:
-                    del answer['audio_path']
+                # Remove audio indicators since we couldn't upload
+                answer.pop('audio_path', None)
+                answer.pop('audio_s3_key', None)
                 continue
             
             logger.info(f"Question {question_id}: Matched audio file with key={audio_key}")
@@ -292,9 +295,9 @@ class SyncService:
                 
                 if len(file_content) == 0:
                     logger.error(f"Audio file for {question_id} is empty (0 bytes), skipping upload")
-                    # Remove audio_path since file is empty
-                    if 'audio_path' in answer:
-                        del answer['audio_path']
+                    # Remove audio indicators since file is empty
+                    answer.pop('audio_path', None)
+                    answer.pop('audio_s3_key', None)
                     continue
                 
                 # Upload to S3
@@ -310,7 +313,7 @@ class SyncService:
                 # Update answer with S3 key ONLY after successful upload
                 answer['audio_s3_key'] = s3_key
                 
-                # Remove local audio_path since it's now in S3
+                # Remove local audio_path if it exists (legacy field)
                 if 'audio_path' in answer:
                     del answer['audio_path']
                 
@@ -353,9 +356,9 @@ class SyncService:
                 )
                 # Don't fail the entire sync for audio processing errors
                 # Just log and continue
-                # Remove audio_path since upload failed
-                if 'audio_path' in answer:
-                    del answer['audio_path']
+                # Remove audio indicators since upload failed
+                answer.pop('audio_path', None)
+                answer.pop('audio_s3_key', None)
                 # NOTE: audio_s3_key is NOT added to answer if upload fails
     
     def poll_pending_transcriptions(

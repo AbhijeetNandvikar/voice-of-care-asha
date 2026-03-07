@@ -65,6 +65,8 @@ class S3Service:
             if content_type:
                 extra_args['ContentType'] = content_type
             
+            logger.info(f"Attempting S3 upload: bucket={bucket}, key={key}, size={len(file_content)} bytes")
+            
             self.s3_client.put_object(
                 Bucket=bucket,
                 Key=key,
@@ -78,13 +80,20 @@ class S3Service:
             
         except ClientError as e:
             error_code = e.response.get('Error', {}).get('Code', 'Unknown')
-            logger.error(f"S3 upload failed for {key}: {error_code} - {str(e)}")
+            error_message = e.response.get('Error', {}).get('Message', str(e))
+            logger.error(
+                f"S3 ClientError during upload - Bucket: {bucket}, Key: {key}, "
+                f"Code: {error_code}, Message: {error_message}"
+            )
             raise
         except BotoCoreError as e:
-            logger.error(f"BotoCore error during upload: {str(e)}")
+            logger.error(f"BotoCore error during upload to {bucket}/{key}: {str(e)}")
             raise
         except Exception as e:
-            logger.error(f"Unexpected error during S3 upload: {str(e)}")
+            logger.error(
+                f"Unexpected error during S3 upload to {bucket}/{key}: {type(e).__name__}: {str(e)}",
+                exc_info=True
+            )
             raise
     
     def generate_presigned_url(

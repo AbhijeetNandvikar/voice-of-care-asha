@@ -231,13 +231,21 @@ class SyncService:
         """
         answers = visit_data['visit_data']['answers']
         
+        logger.info(f"Processing audio files - Total answers: {len(answers)}, Audio files received: {len(audio_files)}")
+        if audio_files:
+            logger.info(f"Audio file keys received: {list(audio_files.keys())}")
+        
         for answer in answers:
+            question_id = answer.get('question_id')
+            
             # Check if this answer has an audio file
             audio_path = answer.get('audio_path')
             if not audio_path:
+                logger.debug(f"Question {question_id}: No audio_path field, skipping")
                 continue
             
-            question_id = answer.get('question_id')
+            logger.info(f"Question {question_id}: Has audio_path={audio_path}, looking for uploaded file")
+            
             if not question_id:
                 logger.warning(f"Answer missing question_id, skipping audio processing")
                 continue
@@ -250,9 +258,11 @@ class SyncService:
             if not audio_key:
                 logger.warning(
                     f"Audio file not found for question {question_id}, "
-                    f"expected in uploaded files"
+                    f"expected in uploaded files. Available keys: {list(audio_files.keys())}"
                 )
                 continue
+            
+            logger.info(f"Question {question_id}: Matched audio file with key={audio_key}")
             
             audio_file = audio_files[audio_key]
             
@@ -263,18 +273,27 @@ class SyncService:
                 local_visit_id = visit_data.get('local_id', 'unknown')
                 s3_key = f"audio/worker_{worker_id}/visit_{local_visit_id}/{question_id}.m4a"
                 
+                logger.info(f"Processing audio for question {question_id}, S3 key: {s3_key}")
+                
                 # Read file content
                 file_content = await audio_file.read()
+                logger.info(f"Read {len(file_content)} bytes from audio file")
+                
+                if len(file_content) == 0:
+                    logger.error(f"Audio file for {question_id} is empty, skipping upload")
+                    continue
                 
                 # Upload to S3
+                logger.info(f"Uploading to S3 bucket: {settings.AWS_S3_BUCKET_AUDIO}")
                 s3_uri = self.s3_service.upload_file(
                     file_content=file_content,
                     bucket=settings.AWS_S3_BUCKET_AUDIO,
                     key=s3_key,
                     content_type='audio/mp4'
                 )
+                logger.info(f"Successfully uploaded to S3: {s3_uri}")
                 
-                # Update answer with S3 key
+                # Update answer with S3 key ONLY after successful upload
                 answer['audio_s3_key'] = s3_key
                 
                 # Remove local audio_path since it's now in S3
@@ -313,9 +332,13 @@ class SyncService:
                 await audio_file.seek(0)
                 
             except Exception as e:
-                logger.error(f"Failed to process audio file for question {question_id}: {e}")
+                logger.error(
+                    f"Failed to process audio file for question {question_id}: {type(e).__name__}: {e}",
+                    exc_info=True
+                )
                 # Don't fail the entire sync for audio processing errors
                 # Just log and continue
+                # NOTE: audio_s3_key is NOT added to answer if upload fails
     
     def poll_pending_transcriptions(
         self, db: Session, visit_ids: Optional[List[int]] = None

@@ -82,7 +82,7 @@ mv "$TEMP_DIR/cert.pem" nginx/ssl/cert.pem
 rm -rf "$TEMP_DIR"
 
 chmod 644 nginx/ssl/cert.pem
-chmod 600 nginx/ssl/key.pem
+chmod 60
 
 echo -e "${GREEN}✓ Certificate generated${NC}"
 

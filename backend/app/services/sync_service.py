@@ -324,18 +324,15 @@ class SyncService:
                         question_id=question_id
                     )
                     
-                    # Determine language code (default to Hindi)
-                    language_code = "hi-IN"  # TODO: Get from worker preferences
-                    
                     self.transcribe_service.start_transcription_job(
                         job_name=job_name,
                         s3_uri=s3_uri,
-                        language_code=language_code
+                        language_code="auto"
                     )
 
                     # Store job name so we can poll for results later
                     answer['transcription_job_name'] = job_name
-                    answer['transcription_language'] = language_code
+                    answer['transcription_language'] = "auto"
 
                     logger.info(f"Started transcription job {job_name} for {s3_key}")
                     
@@ -399,17 +396,18 @@ class SyncService:
                     continue
 
                 try:
-                    transcript_text = self.transcribe_service.get_transcription_result(job_name)
-                    if transcript_text is None:
-                        # Job still running or failed — leave job_name in place
+                    result = self.transcribe_service.get_transcription_result(job_name)
+                    if result is None:
+                        # Job still running — leave job_name in place
                         counts["still_pending"] += 1
                         continue
+
+                    transcript_text, detected_language = result
 
                     # Store transcript in `answer` (primary field) and also
                     # in a language-keyed field for reference
                     answer['answer'] = transcript_text
-                    language = answer.get('transcription_language', 'hi-IN')
-                    if language.startswith('en'):
+                    if detected_language.startswith('en'):
                         answer['transcript_en'] = transcript_text
                     else:
                         answer['transcript_hi'] = transcript_text

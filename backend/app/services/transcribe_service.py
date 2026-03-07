@@ -43,50 +43,52 @@ class TranscribeService:
         self,
         job_name: str,
         s3_uri: str,
-        language_code: str = "hi-IN"
+        language_code: str = "auto"
     ) -> str:
         """
-        Start an AWS Transcribe job for an audio file
-        
+        Start an AWS Transcribe job for an audio file.
+        Uses automatic language detection by default (detects hi-IN and en-IN).
+
         Args:
             job_name: Unique name for the transcription job
             s3_uri: S3 URI of the audio file (s3://bucket/key)
-            language_code: Language code for transcription (hi-IN for Hindi, en-IN for English)
-            
+            language_code: Language code, or "auto" for automatic detection
+
         Returns:
             Job name of the started transcription job
-            
+
         Raises:
             ClientError: If job creation fails
-            ValueError: If language_code is not supported
         """
-        # Validate language code
-        supported_languages = ["hi-IN", "en-IN"]
-        if language_code not in supported_languages:
-            raise ValueError(
-                f"Unsupported language code: {language_code}. "
-                f"Supported languages: {', '.join(supported_languages)}"
-            )
-        
         try:
-            response = self.transcribe_client.start_transcription_job(
-                TranscriptionJobName=job_name,
-                Media={
-                    'MediaFileUri': s3_uri
-                },
-                MediaFormat='mp4',  # m4a files use mp4 container format
-                LanguageCode=language_code,
-                OutputBucketName=settings.AWS_S3_BUCKET_AUDIO,
-                OutputKey='transcripts/',  # Store transcripts in transcripts/ folder
-                Settings={
-                    'ShowSpeakerLabels': False
-                }
-            )
-            
+            if language_code == "auto":
+                job_params = dict(
+                    TranscriptionJobName=job_name,
+                    Media={'MediaFileUri': s3_uri},
+                    MediaFormat='mp4',
+                    IdentifyLanguage=True,
+                    LanguageOptions=['hi-IN', 'en-IN'],
+                    OutputBucketName=settings.AWS_S3_BUCKET_AUDIO,
+                    OutputKey='transcripts/',
+                    Settings={'ShowSpeakerLabels': False},
+                )
+            else:
+                job_params = dict(
+                    TranscriptionJobName=job_name,
+                    Media={'MediaFileUri': s3_uri},
+                    MediaFormat='mp4',
+                    LanguageCode=language_code,
+                    OutputBucketName=settings.AWS_S3_BUCKET_AUDIO,
+                    OutputKey='transcripts/',
+                    Settings={'ShowSpeakerLabels': False},
+                )
+
+            response = self.transcribe_client.start_transcription_job(**job_params)
+
             job_status = response['TranscriptionJob']['TranscriptionJobStatus']
             logger.info(
                 f"Started transcription job '{job_name}' for {s3_uri} "
-                f"with language {language_code}. Status: {job_status}"
+                f"(language: {language_code}). Status: {job_status}"
             )
             
             return job_name
@@ -113,43 +115,43 @@ class TranscribeService:
             logger.error(f"Unexpected error starting transcription job: {str(e)}")
             raise
     
-    def get_transcription_result(self, job_name: str) -> Optional[str]:
+    def get_transcription_result(self, job_name: str) -> Optional[tuple]:
         """
-        Get the transcription result for a completed job
-        
-        Args:
-            job_name: Name of the transcription job
-            
+        Get the transcription result for a completed job.
+
         Returns:
-            Transcribed text if job is completed, None if job is still in progress or failed
-            
+            (transcript_text, detected_language) tuple if completed,
+            None if still in progress.
+
         Raises:
-            ClientError: If retrieving job status fails
+            RuntimeError: If the job failed.
+            ClientError: If retrieving job status fails.
         """
         try:
             response = self.transcribe_client.get_transcription_job(
                 TranscriptionJobName=job_name
             )
-            
+
             job = response['TranscriptionJob']
             status = job['TranscriptionJobStatus']
-            
+
             if status == 'COMPLETED':
-                # Download transcript JSON from S3.
-                # AWS Transcribe stores the output as transcripts/{job_name}.json in OutputBucketName.
+                # AWS Transcribe stores output as transcripts/{job_name}.json
                 transcript_s3_key = f"transcripts/{job_name}.json"
                 s3_response = self.s3_client.get_object(
                     Bucket=settings.AWS_S3_BUCKET_AUDIO,
                     Key=transcript_s3_key
                 )
                 transcript_data = json.loads(s3_response['Body'].read().decode('utf-8'))
-                
-                # Merge all transcripts in case there are multiple
+
                 transcripts = transcript_data['results']['transcripts']
                 transcript_text = ' '.join(t['transcript'] for t in transcripts if 'transcript' in t)
 
-                logger.info(f"Retrieved transcript for job '{job_name}'")
-                return transcript_text
+                # LanguageCode is set by AWS on completion (works for both fixed and auto-detect)
+                detected_language = job.get('LanguageCode', 'hi-IN')
+
+                logger.info(f"Retrieved transcript for job '{job_name}' (language: {detected_language})")
+                return transcript_text, detected_language
                 
             elif status == 'FAILED':
                 failure_reason = job.get('FailureReason', 'Unknown reason')

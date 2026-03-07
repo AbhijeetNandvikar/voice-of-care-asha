@@ -11,6 +11,7 @@ import {
   Modal,
   Platform,
   Linking,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -54,6 +55,9 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
 
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const recordingRef = useRef<any>(null);
+  const recordingStartTimeRef = useRef<number | null>(null);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
   
   // Draft key for persistence
   const draftKey = `visit_draft_${beneficiaryId}_${dayNumber}_${visitType}`;
@@ -270,6 +274,24 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
     setNumericInput('');
   };
 
+  const startPulse = () => {
+    pulseLoopRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.1, duration: 500, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      ])
+    );
+    pulseLoopRef.current.start();
+  };
+
+  const stopPulse = () => {
+    if (pulseLoopRef.current) {
+      pulseLoopRef.current.stop();
+      pulseLoopRef.current = null;
+    }
+    Animated.timing(pulseAnim, { toValue: 1, duration: 150, useNativeDriver: true }).start();
+  };
+
   // Voice recording functionality
   const startRecording = async () => {
     if (!Audio) {
@@ -310,8 +332,10 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
       console.log('[Recording] Recording started successfully');
       setRecording(newRecording);
       recordingRef.current = newRecording;
+      recordingStartTimeRef.current = Date.now();
       setIsRecording(true);
       setRecordingDuration(0);
+      startPulse();
 
       // Start timer for auto-stop after 60 seconds
       recordingTimerRef.current = setInterval(() => {
@@ -346,14 +370,34 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
 
     try {
       setIsRecording(false);
+      stopPulse();
       if (recordingTimerRef.current) {
         clearInterval(recordingTimerRef.current);
         recordingTimerRef.current = null;
       }
 
+      // Compute actual duration before clearing the start time ref
+      const actualDurationMs = recordingStartTimeRef.current
+        ? Date.now() - recordingStartTimeRef.current
+        : 0;
+      recordingStartTimeRef.current = null;
+
       console.log('[Recording] Stopping recording...');
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
+
+      // Discard recordings shorter than 2 seconds
+      if (actualDurationMs < 2000) {
+        console.log('[Recording] Recording too short, discarding');
+        if (uri) {
+          try { new File(uri).delete(); } catch {}
+        }
+        setRecording(null);
+        recordingRef.current = null;
+        setRecordingDuration(0);
+        Alert.alert('Too Short', 'Hold the button for at least 2 seconds to record.');
+        return;
+      }
       
       console.log('[Recording] Recording URI:', uri);
       
@@ -366,21 +410,18 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
 
       // Save audio file to permanent location
       const question = template.questions[currentQuestionIndex];
-      const audioDir = new Directory(Paths.document, `audio/draft_${beneficiaryId}_${dayNumber}`);
 
-      console.log('[Recording] Creating directory:', audioDir.uri);
+      // Directory.create() does NOT create intermediate directories — build each level
+      const audioBaseDir = new Directory(Paths.document, 'audio');
+      if (!audioBaseDir.exists) {
+        audioBaseDir.create();
+        console.log('[Recording] Created audio/ base dir');
+      }
 
-      // Create directory if it doesn't exist
-      try {
-        if (!audioDir.exists) {
-          audioDir.create();
-          console.log('[Recording] Directory created');
-        } else {
-          console.log('[Recording] Directory already exists');
-        }
-      } catch (dirError) {
-        console.error('[Recording] Error creating directory:', dirError);
-        throw dirError;
+      const audioDir = new Directory(audioBaseDir, `draft_${beneficiaryId}_${dayNumber}`);
+      if (!audioDir.exists) {
+        audioDir.create();
+        console.log('[Recording] Created draft dir:', audioDir.uri);
       }
 
       const audioFile = new File(audioDir, `q_${question.id}.m4a`);
@@ -757,21 +798,40 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
                 </Text>
               </View>
             ) : !currentAnswer?.audio_path ? (
-              <TouchableOpacity
-                style={[styles.recordButton, isRecording && styles.recordButtonActive]}
-                onPressIn={startRecording}
-                onPressOut={stopRecording}
-                disabled={isRecording && recordingDuration >= 60}
-              >
-                <Ionicons 
-                  name={isRecording ? "mic" : "mic-outline"} 
-                  size={32} 
-                  color="#fff" 
-                />
-                <Text style={styles.recordButtonText}>
-                  {isRecording ? `Recording... ${recordingDuration}s` : 'Hold to Record'}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.recordButtonContainer}>
+                <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                  <TouchableOpacity
+                    style={[styles.recordButton, isRecording && styles.recordButtonActive]}
+                    onPressIn={startRecording}
+                    onPressOut={stopRecording}
+                    disabled={isRecording && recordingDuration >= 60}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons
+                      name={isRecording ? 'mic' : 'mic-outline'}
+                      size={48}
+                      color="#fff"
+                    />
+                    {isRecording && (
+                      <Text style={styles.recordButtonDuration}>{recordingDuration}s</Text>
+                    )}
+                    <Text style={styles.recordButtonText}>
+                      {isRecording ? 'Release to Save' : 'Hold to Record'}
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
+                {isRecording ? (
+                  <View style={styles.recordingStatus}>
+                    <View style={styles.recordingDot} />
+                    <Text style={styles.recordingStatusText}>Recording… hold and release when done</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.recordHint}>Press and hold the mic while speaking</Text>
+                )}
+                {isRecording && recordingDuration >= 60 && (
+                  <Text style={styles.maxDurationText}>Maximum duration reached</Text>
+                )}
+              </View>
             ) : (
               <View style={styles.recordedSection}>
                 <View style={styles.recordedInfo}>
@@ -782,9 +842,6 @@ export default function DataCollectionScreen({ navigation, route }: Props) {
                   <Text style={styles.reRecordButtonText}>Re-record</Text>
                 </TouchableOpacity>
               </View>
-            )}
-            {isRecording && recordingDuration >= 60 && (
-              <Text style={styles.maxDurationText}>Maximum duration reached</Text>
             )}
           </View>
         )}
@@ -1077,21 +1134,64 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontWeight: '600',
   },
+  recordButtonContainer: {
+    alignItems: 'center',
+  },
   recordButton: {
     backgroundColor: '#FF5252',
-    borderRadius: 12,
-    padding: 24,
+    borderRadius: 80,
+    width: 160,
+    height: 160,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#FF5252',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
   },
   recordButtonActive: {
-    backgroundColor: '#D32F2F',
+    backgroundColor: '#B71C1C',
+    shadowColor: '#B71C1C',
+    shadowOpacity: 0.6,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  recordButtonDuration: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginTop: 4,
   },
   recordButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
-    marginTop: 8,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  recordingStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    gap: 8,
+  },
+  recordingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#FF5252',
+  },
+  recordingStatusText: {
+    fontSize: 13,
+    color: '#B71C1C',
+    fontWeight: '500',
+  },
+  recordHint: {
+    marginTop: 16,
+    fontSize: 13,
+    color: '#999',
+    textAlign: 'center',
   },
   recordedSection: {
     backgroundColor: '#E8F5E9',

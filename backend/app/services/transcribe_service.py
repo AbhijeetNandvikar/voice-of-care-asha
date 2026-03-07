@@ -77,6 +77,7 @@ class TranscribeService:
                 MediaFormat='mp4',  # m4a files use mp4 container format
                 LanguageCode=language_code,
                 OutputBucketName=settings.AWS_S3_BUCKET_AUDIO,
+                OutputKey='transcripts/',  # Store transcripts in transcripts/ folder
                 Settings={
                     'ShowSpeakerLabels': False
                 }
@@ -135,14 +136,17 @@ class TranscribeService:
             
             if status == 'COMPLETED':
                 # Download transcript JSON from S3.
-                # AWS Transcribe stores the output as {job_name}.json in OutputBucketName.
-                transcript_s3_key = f"{job_name}.json"
+                # AWS Transcribe stores the output as transcripts/{job_name}.json in OutputBucketName.
+                transcript_s3_key = f"transcripts/{job_name}.json"
                 s3_response = self.s3_client.get_object(
                     Bucket=settings.AWS_S3_BUCKET_AUDIO,
                     Key=transcript_s3_key
                 )
                 transcript_data = json.loads(s3_response['Body'].read().decode('utf-8'))
-                transcript_text = transcript_data['results']['transcripts'][0]['transcript']
+                
+                # Merge all transcripts in case there are multiple
+                transcripts = transcript_data['results']['transcripts']
+                transcript_text = ' '.join(t['transcript'] for t in transcripts if 'transcript' in t)
 
                 logger.info(f"Retrieved transcript for job '{job_name}'")
                 return transcript_text

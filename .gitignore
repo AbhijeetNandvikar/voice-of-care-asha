@@ -17,6 +17,7 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+test_file
 
 # Node
 web/node_modules/

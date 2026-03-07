@@ -76,6 +76,9 @@ class SyncService:
                 error_message = str(e)
                 logger.error(f"Failed to sync visit (local_id: {local_id}): {error_message}")
                 
+                # Rollback the session to clear the failed transaction
+                db.rollback()
+                
                 failed_visits.append({
                     'local_id': local_id,
                     'error_message': error_message
@@ -105,7 +108,12 @@ class SyncService:
             )
         
         # Commit all changes
-        db.commit()
+        try:
+            db.commit()
+        except Exception as e:
+            logger.error(f"Unexpected error during sync: {e}")
+            db.rollback()
+            raise
         
         logger.info(
             f"Sync completed for worker {worker_id}: "

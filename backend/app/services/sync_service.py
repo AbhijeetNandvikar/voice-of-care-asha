@@ -406,7 +406,9 @@ class SyncService:
                         counts["still_pending"] += 1
                         continue
 
-                    # Store transcript keyed by language
+                    # Store transcript in `answer` (primary field) and also
+                    # in a language-keyed field for reference
+                    answer['answer'] = transcript_text
                     language = answer.get('transcription_language', 'hi-IN')
                     if language.startswith('en'):
                         answer['transcript_en'] = transcript_text

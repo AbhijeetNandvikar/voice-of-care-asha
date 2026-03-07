@@ -21,7 +21,7 @@ router = APIRouter(prefix="/api/v1/sync", tags=["sync"])
 
 # How long to wait between poll attempts (seconds) and max attempts
 _POLL_INTERVAL = 30
-_POLL_MAX_ATTEMPTS = 10  # 10 × 30s = 5 min max wait per sync batch
+_POLL_MAX_ATTEMPTS = 40  # 40 × 30s = 20 min max wait per sync batch
 
 
 async def _poll_transcriptions_for_batch(visit_ids: List[int]) -> None:

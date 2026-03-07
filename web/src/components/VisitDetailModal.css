@@ -338,6 +338,29 @@
   line-height: 1.5;
 }
 
+/* Transcript Processing */
+.transcript-processing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fffbf0;
+  border: 1px solid #ffe082;
+  border-radius: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #7a5c00;
+}
+
+.transcript-processing__icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.transcript-processing__text {
+  font-style: italic;
+}
+
 /* Audio Indicator */
 .audio-indicator {
   display: flex;

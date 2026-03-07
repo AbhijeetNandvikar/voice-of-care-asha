@@ -341,6 +341,7 @@ export const Workers: React.FC = () => {
         pageSize={pageSize}
         onPageChange={handlePageChange}
         onSearch={handleSearch}
+        onRefresh={fetchWorkers}
         onRowClick={handleRowClick}
         loading={loading}
         searchPlaceholder="Search by name or worker ID..."

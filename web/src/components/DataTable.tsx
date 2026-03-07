@@ -18,6 +18,7 @@ export interface DataTableProps<T> {
   onSearch: (query: string) => void;
   onFilter?: (filters: Record<string, any>) => void;
   onExport?: () => void;
+  onRefresh?: () => void;
   onRowClick?: (row: T) => void;
   loading?: boolean;
   searchPlaceholder?: string;
@@ -38,6 +39,7 @@ export function DataTable<T extends Record<string, any>>({
   onSearch,
   onFilter,
   onExport,
+  onRefresh,
   onRowClick,
   loading = false,
   searchPlaceholder = 'Search...',
@@ -172,6 +174,12 @@ export function DataTable<T extends Record<string, any>>({
         </div>
 
         <div className="toolbar-right">
+          {/* Refresh Button */}
+          {onRefresh && (
+            <button className="refresh-button" onClick={onRefresh} disabled={loading} title="Reload data">
+              ↺ Reload
+            </button>
+          )}
           {/* Export Button */}
           {onExport && (
             <button className="export-button" onClick={onExport}>

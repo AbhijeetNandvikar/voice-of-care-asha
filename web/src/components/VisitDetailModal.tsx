@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
+import { formatDateTime } from '../utils/dateUtils';
 import './VisitDetailModal.css';
 
 interface VisitDetailModalProps {
@@ -76,20 +77,7 @@ export const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
     }
   };
 
-  const formatDate = (dateString: string): string => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleString('en-IN', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return dateString;
-    }
-  };
+  const formatDate = (dateString: string): string => formatDateTime(dateString);
 
   const formatVisitType = (type: string): string => {
     const typeLabels: Record<string, string> = {
@@ -225,7 +213,7 @@ export const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
                         </div>
 
                         {/* Display transcript if available */}
-                        {(answer.transcript_en || answer.transcript_hi) && (
+                        {(answer.transcript_en || answer.transcript_hi) ? (
                           <div className="transcript-section">
                             <div className="transcript-label">
                               <span className="transcript-icon">🎤</span>
@@ -246,7 +234,14 @@ export const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
                               )}
                             </div>
                           </div>
-                        )}
+                        ) : answer.audio_s3_key ? (
+                          <div className="transcript-processing">
+                            <span className="transcript-processing__icon">⏳</span>
+                            <span className="transcript-processing__text">
+                              Transcript is being processed…
+                            </span>
+                          </div>
+                        ) : null}
 
                         {/* Display audio indicator if available */}
                         {answer.audio_s3_key && (

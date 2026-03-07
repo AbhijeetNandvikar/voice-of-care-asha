@@ -3,6 +3,7 @@ import { DataTable, type Column } from '../components/DataTable';
 import { VisitDetailModal } from '../components/VisitDetailModal';
 import type { Visit, Worker, PaginatedResponse } from '../types';
 import api from '../services/api';
+import { formatDate } from '../utils/dateUtils';
 import './Visits.css';
 
 interface VisitWithDetails extends Visit {
@@ -124,18 +125,7 @@ export const Visits: React.FC = () => {
     {
       key: 'visit_date_time',
       label: 'Visit Date',
-      render: (value) => {
-        try {
-          const date = new Date(value);
-          return date.toLocaleDateString('en-IN', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          });
-        } catch {
-          return value;
-        }
-      },
+      render: (value) => formatDate(value),
     },
     {
       key: 'is_synced',
@@ -212,6 +202,7 @@ export const Visits: React.FC = () => {
         pageSize={pageSize}
         onPageChange={handlePageChange}
         onSearch={handleSearch}
+        onRefresh={fetchVisits}
         onRowClick={handleRowClick}
         loading={loading}
         searchPlaceholder="Search by MCTS ID..."

@@ -82,6 +82,33 @@
   box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
 }
 
+/* Refresh Button */
+.refresh-button {
+  padding: 8px 14px;
+  background-color: #ffffff;
+  color: #555;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.refresh-button:hover:not(:disabled) {
+  border-color: #667eea;
+  color: #667eea;
+  background: #f5f7ff;
+}
+
+.refresh-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Export Button */
 .export-button {
   padding: 8px 16px;

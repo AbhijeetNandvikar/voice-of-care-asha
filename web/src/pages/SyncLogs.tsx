@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DataTable, type Column } from '../components/DataTable';
 import type { PaginatedResponse } from '../types';
 import api from '../services/api';
+import { formatDateTime } from '../utils/dateUtils';
 import './SyncLogs.css';
 
 interface SyncLog {
@@ -106,20 +107,7 @@ export const SyncLogs: React.FC = () => {
     {
       key: 'date_time',
       label: 'Date & Time',
-      render: (value) => {
-        try {
-          const date = new Date(value);
-          return date.toLocaleString('en-IN', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          });
-        } catch {
-          return value;
-        }
-      },
+      render: (value) => formatDateTime(value),
     },
     {
       key: 'status',
@@ -207,6 +195,7 @@ export const SyncLogs: React.FC = () => {
         pageSize={pageSize}
         onPageChange={handlePageChange}
         onSearch={handleSearch}
+        onRefresh={fetchSyncLogs}
         loading={loading}
         searchPlaceholder="Search sync logs..."
       />

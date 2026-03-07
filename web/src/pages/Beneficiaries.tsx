@@ -450,6 +450,7 @@ export const Beneficiaries: React.FC = () => {
         pageSize={pageSize}
         onPageChange={handlePageChange}
         onSearch={handleSearch}
+        onRefresh={fetchBeneficiaries}
         onRowClick={handleRowClick}
         loading={loading}
         searchPlaceholder="Search by MCTS ID or name..."

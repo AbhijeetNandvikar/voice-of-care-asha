@@ -251,15 +251,18 @@ class SyncService:
                 continue
             
             # Find the corresponding audio file in the uploaded files
-            # The mobile app should send files with keys like: audio_{local_visit_id}_{question_id}
-            # or we can use a simpler key pattern
+            # The mobile app sends files with keys matching question_id (e.g., "hbnc_q1")
             audio_key = self._find_audio_file_key(audio_files, question_id)
             
             if not audio_key:
-                logger.warning(
-                    f"Audio file not found for question {question_id}, "
-                    f"expected in uploaded files. Available keys: {list(audio_files.keys())}"
+                logger.error(
+                    f"Audio file not found for question {question_id}. "
+                    f"Available keys: {list(audio_files.keys())}. "
+                    f"This answer will be saved WITHOUT audio."
                 )
+                # Remove audio_path since we couldn't upload it
+                if 'audio_path' in answer:
+                    del answer['audio_path']
                 continue
             
             logger.info(f"Question {question_id}: Matched audio file with key={audio_key}")
@@ -277,14 +280,17 @@ class SyncService:
                 
                 # Read file content
                 file_content = await audio_file.read()
-                logger.info(f"Read {len(file_content)} bytes from audio file")
+                logger.info(f"Read {len(file_content)} bytes from audio file for {question_id}")
                 
                 if len(file_content) == 0:
-                    logger.error(f"Audio file for {question_id} is empty, skipping upload")
+                    logger.error(f"Audio file for {question_id} is empty (0 bytes), skipping upload")
+                    # Remove audio_path since file is empty
+                    if 'audio_path' in answer:
+                        del answer['audio_path']
                     continue
                 
                 # Upload to S3
-                logger.info(f"Uploading to S3 bucket: {settings.AWS_S3_BUCKET_AUDIO}")
+                logger.info(f"Uploading to S3 bucket: {settings.AWS_S3_BUCKET_AUDIO}, key: {s3_key}")
                 s3_uri = self.s3_service.upload_file(
                     file_content=file_content,
                     bucket=settings.AWS_S3_BUCKET_AUDIO,
@@ -325,7 +331,8 @@ class SyncService:
                 except Exception as transcribe_error:
                     # Log error but don't fail the sync
                     logger.error(
-                        f"Failed to start transcription for {s3_key}: {transcribe_error}"
+                        f"Failed to start transcription for {s3_key}: {transcribe_error}",
+                        exc_info=True
                     )
                 
                 # Reset file pointer for potential reuse
@@ -338,6 +345,9 @@ class SyncService:
                 )
                 # Don't fail the entire sync for audio processing errors
                 # Just log and continue
+                # Remove audio_path since upload failed
+                if 'audio_path' in answer:
+                    del answer['audio_path']
                 # NOTE: audio_s3_key is NOT added to answer if upload fails
     
     def poll_pending_transcriptions(
@@ -438,22 +448,34 @@ class SyncService:
         """
         Find the audio file key for a given question ID
         
+        Mobile app sends files named: {local_visit_id}_{question_id}.m4a
+        After backend processing, the key becomes: {local_visit_id}_{question_id}
+        
         Args:
             audio_files: Dictionary mapping audio keys to UploadFile objects
-            question_id: Question ID to search for
+            question_id: Question ID to search for (e.g., "hbnc_q1")
             
         Returns:
             Audio file key if found, None otherwise
         """
-        # Try exact match first
+        # Try exact match first (unlikely but possible)
         if question_id in audio_files:
+            logger.debug(f"Found exact match for question_id: {question_id}")
             return question_id
         
-        # Try with common prefixes
+        # Try to find key that ends with the question_id
+        # Format: {visit_id}_{question_id}
         for key in audio_files.keys():
+            # Check if key ends with _{question_id}
+            if key.endswith(f"_{question_id}"):
+                logger.debug(f"Found match: {key} ends with _{question_id}")
+                return key
+            # Also check if question_id is anywhere in the key (fallback)
             if question_id in key:
+                logger.debug(f"Found partial match: {question_id} in {key}")
                 return key
         
+        logger.warning(f"No match found for question_id: {question_id}")
         return None
     
     def _create_sync_log(

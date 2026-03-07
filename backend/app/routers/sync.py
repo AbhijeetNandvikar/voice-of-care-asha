@@ -112,21 +112,21 @@ async def sync_visits(
             )
         
         # Build audio files dictionary
-        # Files should be named with a key that can be matched to question IDs
+        # Files should be named with question IDs (e.g., "hbnc_q1.m4a")
         audio_files = {}
         for file in files:
-            # Use filename as key (mobile app should name files appropriately)
-            # e.g., "audio_123_hbnc_q1.m4a" or just "hbnc_q1"
+            # Use filename as key (mobile app names files with question_id)
             filename = file.filename
             if filename:
-                # Extract a simple key from filename
-                # Remove extension and common prefixes
-                key = filename.replace('.m4a', '').replace('.mp4', '').replace('audio_', '')
+                # Extract key by removing extension
+                key = filename.replace('.m4a', '').replace('.mp4', '')
                 audio_files[key] = file
+                logger.debug(f"Received audio file: {filename} -> key: {key}")
         
         logger.info(
             f"Sync request from worker {current_worker.id}: "
-            f"{len(visits_data)} visits, {len(audio_files)} audio files"
+            f"{len(visits_data)} visits, {len(audio_files)} audio files. "
+            f"File keys: {list(audio_files.keys())}"
         )
         
         # Process sync

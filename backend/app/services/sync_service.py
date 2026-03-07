@@ -400,7 +400,7 @@ class SyncService:
 
                 try:
                     transcript_text = self.transcribe_service.get_transcription_result(job_name)
-
+                    print(transcript_text)
                     if transcript_text is None:
                         # Job still running or failed — leave job_name in place
                         counts["still_pending"] += 1
@@ -445,7 +445,7 @@ class SyncService:
                         f"for visit {visit.id}: {e}"
                     )
                     counts["failed"] += 1
-            print(visit_dirty)
+            
             if visit_dirty:
                 # SQLAlchemy won't detect in-place JSON mutations automatically
                 visit.visit_data = copy.deepcopy(visit.visit_data)

@@ -438,13 +438,14 @@ class SyncService:
                     visit_dirty = True
                     counts["failed"] += 1
 
+
                 except Exception as e:
                     logger.error(
                         f"Error polling transcription job '{job_name}' "
                         f"for visit {visit.id}: {e}"
                     )
                     counts["failed"] += 1
-
+            print(visit_dirty)
             if visit_dirty:
                 # SQLAlchemy won't detect in-place JSON mutations automatically
                 visit.visit_data = copy.deepcopy(visit.visit_data)

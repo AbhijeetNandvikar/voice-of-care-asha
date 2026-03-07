@@ -1,134 +1,141 @@
 # Project Structure
 
-## Monorepo Layout
+## Repository Layout
+
 ```
 voice-of-care-asha/
-├── backend/          # FastAPI backend application
-├── web/              # React.js web dashboard
-├── mobile/           # Expo React Native mobile app (planned)
-├── nginx/            # Nginx configuration
-├── .kiro/            # Kiro AI assistant configuration
-│   ├── specs/        # Feature specifications
-│   └── steering/     # Project guidance documents
-└── docker-compose.yml
+├── backend/              # FastAPI backend application
+├── mobile/               # Expo React Native mobile app
+├── web/                  # React.js web dashboard
+├── .kiro/                # Kiro AI assistant configuration
+│   ├── specs/            # Feature specifications
+│   ├── steering/         # AI guidance rules
+│   └── hooks/            # Automation hooks
+├── docker-compose.yml    # Multi-service orchestration
+├── Makefile              # Developer workflow commands
+└── .env                  # Root environment config
 ```
 
 ## Backend Structure (`backend/`)
+
+Follows standard FastAPI layered architecture:
+
 ```
 backend/
 ├── app/
-│   ├── main.py              # FastAPI entry point, router registration
-│   ├── config.py            # Environment-based settings (pydantic-settings)
-│   ├── database.py          # SQLAlchemy engine and session management
-│   ├── dependencies.py      # Shared dependencies (auth, db session)
-│   ├── models/              # SQLAlchemy ORM models
-│   │   ├── base.py          # Base model class
-│   │   ├── worker.py
-│   │   ├── beneficiary.py
-│   │   ├── visit.py
-│   │   ├── visit_template.py
-│   │   ├── collection_center.py
-│   │   └── sync_log.py
-│   ├── schemas/             # Pydantic request/response schemas
-│   │   ├── auth.py
-│   │   ├── workers.py
-│   │   ├── beneficiaries.py
-│   │   └── templates.py
-│   ├── routers/             # API route handlers (grouped by resource)
-│   │   ├── auth.py          # /api/v1/auth/*
-│   │   ├── workers.py       # /api/v1/workers/*
-│   │   ├── beneficiaries.py # /api/v1/beneficiaries/*
-│   │   ├── templates.py     # /api/v1/templates/*
-│   │   ├── mobile.py        # /api/v1/mobile/*
-│   │   └── sync.py          # /api/v1/sync/*
-│   └── services/            # Business logic and external integrations
-│       ├── auth_service.py  # Password/MPIN hashing, JWT generation
-│       ├── s3.py            # AWS S3 operations
-│       ├── transcribe.py    # AWS Transcribe integration
-│       └── bedrock.py       # AWS Bedrock (Claude) integration
-├── alembic/                 # Database migrations
-│   ├── versions/            # Migration scripts
-│   └── env.py
-├── tests/                   # Pytest test suite
-│   ├── conftest.py          # Test fixtures
-│   └── test_*.py            # Test files
-├── scripts/                 # Utility scripts (seeding, etc.)
-├── requirements.txt
-├── Dockerfile
-└── .env.example
+│   ├── main.py           # FastAPI app entry point
+│   ├── config.py         # Settings (pydantic-settings)
+│   ├── database.py       # SQLAlchemy setup
+│   ├── dependencies.py   # Dependency injection
+│   ├── models/           # SQLAlchemy ORM models
+│   ├── schemas/          # Pydantic request/response schemas
+│   ├── routers/          # API route handlers
+│   └── services/         # Business logic layer
+├── alembic/              # Database migrations
+│   └── versions/         # Migration files
+├── tests/                # pytest test suite
+├── scripts/              # Utility scripts (seeding, etc.)
+├── requirements.txt      # Python dependencies
+├── .env                  # Backend environment config
+└── Dockerfile            # Backend container image
 ```
 
-## Web Dashboard Structure (`web/`)
-```
-web/
-├── src/
-│   ├── App.jsx              # Main app component with routing
-│   ├── pages/               # Page components
-│   │   ├── Login.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── Workers.jsx
-│   │   ├── Beneficiaries.jsx
-│   │   ├── Visits.jsx
-│   │   └── Profile.jsx
-│   ├── components/          # Reusable UI components
-│   │   ├── Sidebar.jsx
-│   │   ├── DataTable.jsx    # Paginated table component
-│   │   └── DetailModal.jsx  # Detail view modal
-│   └── api/
-│       └── client.js        # Axios instance with auth interceptor
-├── public/
-├── dist/                    # Build output (served by Nginx)
-└── package.json
-```
+### Backend Conventions
+- **Models**: SQLAlchemy models in `app/models/`, inherit from `Base`
+- **Schemas**: Pydantic models in `app/schemas/` for validation
+- **Routers**: API endpoints in `app/routers/`, registered in `main.py`
+- **Services**: Business logic in `app/services/`, called by routers
+- **Dependencies**: Shared dependencies (DB session, auth) in `dependencies.py`
 
-## Mobile App Structure (`mobile/`) - Planned
+## Mobile App Structure (`mobile/`)
+
+Expo React Native with TypeScript:
+
 ```
 mobile/
 ├── src/
-│   ├── navigation/          # React Navigation stacks
-│   ├── screens/
-│   │   ├── auth/            # Login, MPIN screens
-│   │   ├── dashboard/       # Dashboard, PastVisits, Profile
-│   │   └── visit/           # Visit flow screens
-│   ├── components/          # Shared UI components
-│   ├── store/               # Zustand state management
-│   ├── db/                  # SQLite schema and queries
-│   ├── services/
-│   │   ├── api.ts           # API client
-│   │   ├── audio.ts         # Audio recording helpers
-│   │   └── sync.ts          # Sync orchestration
-│   ├── i18n/
-│   │   ├── en.json
-│   │   └── hi.json
-│   └── utils/
-└── app.json
+│   ├── navigation/       # React Navigation setup
+│   ├── screens/          # Screen components
+│   ├── components/       # Reusable UI components
+│   ├── store/            # Zustand state management
+│   ├── services/         # API clients, SQLite, sync logic
+│   ├── utils/            # Helper functions
+│   ├── types/            # TypeScript type definitions
+│   └── i18n/             # Internationalization (i18next)
+├── assets/               # Images, fonts, etc.
+├── App.tsx               # Root component
+├── index.ts              # Entry point
+├── app.json              # Expo configuration
+└── package.json          # Dependencies
 ```
 
-## Key Architectural Patterns
+### Mobile Conventions
+- **Screens**: Full-page components in `src/screens/`
+- **Navigation**: Stack and tab navigators in `src/navigation/`
+- **State**: Zustand stores in `src/store/` (e.g., `authStore`, `visitStore`)
+- **Offline-First**: SQLite for local storage, sync service for cloud sync
+- **Localization**: i18next with English and Hindi translations
+
+## Web Dashboard Structure (`web/`)
+
+React.js with Vite:
+
+```
+web/
+├── src/
+│   ├── components/       # Reusable UI components
+│   ├── pages/            # Page components
+│   ├── services/         # API clients
+│   ├── hooks/            # Custom React hooks
+│   ├── utils/            # Helper functions
+│   └── types/            # TypeScript types
+├── public/               # Static assets
+├── index.html            # HTML entry point
+├── vite.config.ts        # Vite configuration
+└── package.json          # Dependencies
+```
+
+## Database Schema
+
+Key entities:
+- **workers**: ASHA worker accounts
+- **beneficiaries**: Pregnant women and newborns
+- **collection_centers**: Health facilities
+- **visit_templates**: Visit type definitions (HBNC, etc.)
+- **visits**: Recorded visit data
+- **sync_logs**: Synchronization tracking
+
+## Architecture Patterns
 
 ### Backend
-- **Dependency Injection**: Use FastAPI's `Depends()` for database sessions and auth
-- **Service Layer**: Business logic separated from route handlers
-- **Schema Validation**: Pydantic models for all request/response data
-- **Database Models**: SQLAlchemy ORM with Alembic migrations
-- **JSONB Fields**: Use for flexible metadata and nested structures (visit_data, questions)
+- **Layered Architecture**: Routers → Services → Models
+- **Dependency Injection**: FastAPI's `Depends()` for DB sessions, auth
+- **Pydantic Validation**: Request/response schemas for type safety
+- **Async/Await**: Async route handlers for I/O operations
 
-### API Structure
-- Base URL: `/api/v1/`
-- RESTful resource naming
-- JWT Bearer token authentication (except login/signup)
-- Consistent error responses
-
-### Mobile (Planned)
+### Mobile
 - **Offline-First**: SQLite as source of truth, sync when online
-- **State Management**: Zustand for global state
-- **Navigation**: React Navigation with stack and tab navigators
-- **Localization**: i18n with English and Hindi support
+- **State Management**: Zustand for global state (auth, visits)
+- **Navigation**: Nested navigators (Auth, Main Tabs, Visit Stack)
+- **Component Structure**: Screens use reusable components
 
-### Database
-- **JSONB Usage**: 
-  - `visit_templates.questions`: Array of question objects
-  - `visits.visit_data`: Answers, audio S3 keys, transcripts
-  - `*.meta_data`: Flexible additional data
-- **Relationships**: Foreign keys with proper indexing
-- **Timestamps**: `created_at`, `updated_at` on all main tables
+### API Design
+- **RESTful**: Standard HTTP methods (GET, POST, PUT, DELETE)
+- **Versioning**: `/api/v1/` prefix
+- **Authentication**: JWT bearer tokens
+- **Mobile-Specific**: `/mobile/init` endpoint for offline data sync
+
+## Configuration Files
+
+- **Backend**: `.env` (DATABASE_URL, JWT_SECRET, AWS credentials)
+- **Mobile**: `.env` (API_BASE_URL)
+- **Docker**: Root `.env` (POSTGRES_PASSWORD, JWT_SECRET, AWS config)
+- **Alembic**: `alembic.ini` (migration settings)
+- **Expo**: `app.json` (app metadata, build config)
+
+## Testing
+
+- **Backend**: `backend/tests/` with pytest
+- **Naming**: `test_*.py` files, `test_*` functions
+- **Fixtures**: Shared fixtures in `conftest.py`
+- **Coverage**: Focus on routers, services, and critical business logic

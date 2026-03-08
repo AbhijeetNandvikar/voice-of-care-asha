@@ -12,6 +12,7 @@ from app.dependencies import get_current_worker
 from app.models.worker import Worker
 from app.models.visit import Visit
 from app.models.beneficiary import Beneficiary
+from app.models.visit_template import VisitTemplate
 
 
 router = APIRouter(prefix="/api/v1/visits", tags=["visits"])
@@ -137,13 +138,19 @@ async def get_visit(
         Visit details with beneficiary and worker information
     """
     visit = db.query(Visit).filter(Visit.id == visit_id).first()
-    
+
     if not visit:
         raise HTTPException(status_code=404, detail="Visit not found")
-    
+
     beneficiary = db.query(Beneficiary).filter(Beneficiary.id == visit.beneficiary_id).first()
     worker = db.query(Worker).filter(Worker.id == visit.assigned_asha_id).first()
-    
+    template = db.query(VisitTemplate).filter(VisitTemplate.id == visit.template_id).first()
+
+    # Build a question_id -> question_en map from template
+    question_map = {}
+    if template and template.questions:
+        question_map = {q["id"]: q.get("question_en", q["id"]) for q in template.questions}
+
     return {
         "id": visit.id,
         "visit_type": visit.visit_type,
@@ -155,6 +162,7 @@ async def get_visit(
         "template_id": visit.template_id,
         "visit_data": visit.visit_data,
         "meta_data": visit.meta_data,
+        "question_map": question_map,
         "synced_at": visit.synced_at.isoformat() if visit.synced_at else None,
         "created_at": visit.created_at.isoformat(),
         "updated_at": visit.updated_at.isoformat(),

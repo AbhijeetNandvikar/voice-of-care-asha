@@ -31,6 +31,12 @@ Data model:
 Always use the available tools to look up real data before answering questions. Be concise and factual.
 If asked about counts, totals, or summaries, use get_dashboard_stats first. For specific queries, use the appropriate tool.
 When a user refers to a worker or beneficiary by name, use search_workers or get_beneficiaries with the name parameter first to find their ID.
+
+IMPORTANT: When asked about someone's health status or condition (e.g., "Is Priya okay?", "Is the baby healthy?"):
+1. First find the beneficiary using get_beneficiaries with the name
+2. Then use get_beneficiary_health_summary with their ID to get detailed health information from recent visits
+3. Analyze the visit_data to provide a meaningful health assessment
+
 Format numbers clearly and explain what the data means in the healthcare context."""
 
 TOOLS = [
@@ -56,7 +62,15 @@ TOOLS = [
                 },
                 "worker_id": {
                     "type": "string",
-                    "description": "Filter by worker ID (e.g., AW000001, MO000001). If you only have a worker name, use search_workers first to find their ID."
+                    "description": "Filter by worker ID (e.g., AW000001, MO000001). If you only have a worker name, use worker_name parameter instead."
+                },
+                "worker_name": {
+                    "type": "string",
+                    "description": "Filter by worker name (first or last name, or full name like 'Lata Shinde')"
+                },
+                "beneficiary_name": {
+                    "type": "string",
+                    "description": "Filter by beneficiary name (first or last name, or full name like 'Meera Patil')"
                 },
                 "days_back": {
                     "type": "integer",
@@ -157,6 +171,24 @@ TOOLS = [
             },
             "required": []
         }
+    },
+    {
+        "name": "get_beneficiary_health_summary",
+        "description": "Get detailed health information for a specific beneficiary including their recent visits with full visit_data. Use this when asked about someone's health status or condition.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "beneficiary_id": {
+                    "type": "integer",
+                    "description": "The beneficiary database ID (get from get_beneficiaries first if you only have a name)"
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max number of recent visits to include (default 5)"
+                }
+            },
+            "required": ["beneficiary_id"]
+        }
     }
 ]
 
@@ -175,6 +207,8 @@ def _execute_tool(tool_name: str, tool_input: Dict[str, Any], db: Session) -> st
             return _get_visit_details(db, **tool_input)
         elif tool_name == "get_sync_status":
             return _get_sync_status(db, **tool_input)
+        elif tool_name == "get_beneficiary_health_summary":
+            return _get_beneficiary_health_summary(db, **tool_input)
         else:
             return json.dumps({"error": f"Unknown tool: {tool_name}"})
     except Exception as e:
@@ -204,6 +238,8 @@ def _get_visits_summary(
     db: Session,
     visit_type: str = None,
     worker_id: str = None,
+    worker_name: str = None,
+    beneficiary_name: str = None,
     days_back: int = None,
     is_synced: bool = None,
     limit: int = 10
@@ -212,19 +248,88 @@ def _get_visits_summary(
 
     if visit_type:
         q = q.filter(Visit.visit_type == visit_type)
+    
     if worker_id:
         # Look up worker by worker_id string (e.g., "AW000001")
         worker = db.query(Worker).filter(Worker.worker_id == worker_id).first()
         if worker:
             q = q.filter(Visit.assigned_asha_id == worker.id)
         else:
-            # If worker not found, return empty result
             return json.dumps({
                 "total_matching": 0,
                 "type_breakdown": {},
                 "recent_visits": [],
                 "error": f"Worker with ID {worker_id} not found"
             })
+    
+    if worker_name:
+        # Search for worker by name using same hybrid logic
+        name_parts = worker_name.strip().split()
+        worker_query = db.query(Worker)
+        
+        if len(name_parts) >= 2:
+            first_part = name_parts[0]
+            last_part = name_parts[-1]
+            worker_query = worker_query.filter(
+                (Worker.first_name.ilike(f"%{first_part}%") & Worker.last_name.ilike(f"%{last_part}%")) |
+                (Worker.first_name.ilike(f"%{last_part}%") & Worker.last_name.ilike(f"%{first_part}%")) |
+                Worker.first_name.ilike(f"%{first_part}%") |
+                Worker.last_name.ilike(f"%{last_part}%") |
+                Worker.first_name.ilike(f"%{last_part}%") |
+                Worker.last_name.ilike(f"%{first_part}%")
+            )
+        else:
+            worker_query = worker_query.filter(
+                (Worker.first_name.ilike(f"%{worker_name}%")) |
+                (Worker.last_name.ilike(f"%{worker_name}%"))
+            )
+        
+        workers = worker_query.all()
+        if workers:
+            worker_ids = [w.id for w in workers]
+            q = q.filter(Visit.assigned_asha_id.in_(worker_ids))
+        else:
+            return json.dumps({
+                "total_matching": 0,
+                "type_breakdown": {},
+                "recent_visits": [],
+                "error": f"No workers found matching name '{worker_name}'"
+            })
+    
+    if beneficiary_name:
+        # Search for beneficiary by name using same hybrid logic
+        name_parts = beneficiary_name.strip().split()
+        beneficiary_query = db.query(Beneficiary)
+        
+        if len(name_parts) >= 2:
+            first_part = name_parts[0]
+            last_part = name_parts[-1]
+            beneficiary_query = beneficiary_query.filter(
+                (Beneficiary.first_name.ilike(f"%{first_part}%") & Beneficiary.last_name.ilike(f"%{last_part}%")) |
+                (Beneficiary.first_name.ilike(f"%{last_part}%") & Beneficiary.last_name.ilike(f"%{first_part}%")) |
+                Beneficiary.first_name.ilike(f"%{first_part}%") |
+                Beneficiary.last_name.ilike(f"%{last_part}%") |
+                Beneficiary.first_name.ilike(f"%{last_part}%") |
+                Beneficiary.last_name.ilike(f"%{first_part}%")
+            )
+        else:
+            beneficiary_query = beneficiary_query.filter(
+                (Beneficiary.first_name.ilike(f"%{beneficiary_name}%")) |
+                (Beneficiary.last_name.ilike(f"%{beneficiary_name}%"))
+            )
+        
+        beneficiaries = beneficiary_query.all()
+        if beneficiaries:
+            beneficiary_ids = [b.id for b in beneficiaries]
+            q = q.filter(Visit.beneficiary_id.in_(beneficiary_ids))
+        else:
+            return json.dumps({
+                "total_matching": 0,
+                "type_breakdown": {},
+                "recent_visits": [],
+                "error": f"No beneficiaries found matching name '{beneficiary_name}'"
+            })
+    
     if days_back:
         cutoff = datetime.now(UTC) - timedelta(days=days_back)
         q = q.filter(Visit.visit_date_time >= cutoff)
@@ -437,6 +542,63 @@ def _get_sync_status(
             }
             for log in logs
         ]
+    })
+
+
+def _get_beneficiary_health_summary(db: Session, beneficiary_id: int, limit: int = 5) -> str:
+    """Get detailed health information for a beneficiary including recent visit data."""
+    beneficiary = db.query(Beneficiary).filter(Beneficiary.id == beneficiary_id).first()
+    if not beneficiary:
+        return json.dumps({"error": f"Beneficiary {beneficiary_id} not found"})
+
+    # Get recent visits with full visit_data
+    visits = (
+        db.query(Visit)
+        .filter(Visit.beneficiary_id == beneficiary_id)
+        .order_by(Visit.visit_date_time.desc())
+        .limit(min(limit, 10))
+        .all()
+    )
+
+    # Get assigned worker info
+    assigned_worker = None
+    if beneficiary.assigned_asha_id:
+        worker = db.query(Worker).filter(Worker.id == beneficiary.assigned_asha_id).first()
+        if worker:
+            assigned_worker = {
+                "name": f"{worker.first_name} {worker.last_name}",
+                "worker_id": worker.worker_id,
+                "worker_type": worker.worker_type
+            }
+
+    visits_data = []
+    for v in visits:
+        worker = db.query(Worker).filter(Worker.id == v.assigned_asha_id).first()
+        visits_data.append({
+            "id": v.id,
+            "visit_type": v.visit_type,
+            "visit_date": v.visit_date_time.isoformat() if v.visit_date_time else None,
+            "day_number": v.day_number,
+            "is_synced": v.is_synced,
+            "worker": f"{worker.first_name} {worker.last_name}" if worker else None,
+            "visit_data": v.visit_data,  # Full health data from the visit
+            "audio_url": v.audio_url,
+            "transcription": v.transcription
+        })
+
+    return json.dumps({
+        "beneficiary": {
+            "id": beneficiary.id,
+            "name": f"{beneficiary.first_name} {beneficiary.last_name}",
+            "type": beneficiary.beneficiary_type,
+            "mcts_id": beneficiary.mcts_id,
+            "age": beneficiary.age,
+            "phone_number": beneficiary.phone_number,
+            "address": beneficiary.address,
+        },
+        "assigned_worker": assigned_worker,
+        "total_visits": len(visits),
+        "recent_visits": visits_data
     })
 
 

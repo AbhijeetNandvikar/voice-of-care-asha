@@ -294,12 +294,13 @@ Instructions:
 5. Generate serial numbers sequentially starting from 1
 6. Calculate the period from the earliest and latest visit dates
 7. Ensure all data is accurate and matches the source data
-8. Return ONLY the JSON response, no additional text or explanation
+8. Return ONLY valid JSON - no markdown code blocks, no additional text or explanation
+9. CRITICAL: Ensure all JSON syntax is correct - all strings must be properly quoted, all commas must be in place, and all brackets must be balanced
+10. If remarks contain quotes, escape them properly with backslashes
 
 Generate the report now:"""
 
         return prompt
-    
     def parse_claude_json_response(self, response_text: str) -> Dict[str, Any]:
         """
         Parse Claude's JSON response, handling potential markdown code blocks
@@ -315,45 +316,57 @@ Generate the report now:"""
         """
         logger.debug(f"Parsing Claude response (first 500 chars): {response_text[:500]}")
         
+        import re
+        
+        # Try direct JSON parsing first
         try:
-            # Try direct JSON parsing first
             parsed = json.loads(response_text)
             logger.info(f"Successfully parsed JSON directly, type: {type(parsed)}")
             return parsed
-        except json.JSONDecodeError:
-            # Claude might wrap JSON in markdown code blocks
-            # Try to extract JSON from ```json ... ``` blocks
-            import re
-            
-            logger.debug("Direct JSON parsing failed, trying to extract from markdown")
-            
-            # Look for JSON code block
-            json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', response_text, re.DOTALL)
-            if json_match:
-                json_str = json_match.group(1)
-                try:
-                    parsed = json.loads(json_str)
-                    logger.info(f"Successfully parsed JSON from code block, type: {type(parsed)}")
-                    return parsed
-                except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse JSON from code block: {str(e)}")
-                    raise ValueError(f"Invalid JSON in code block: {str(e)}")
-            
-            # Try to find JSON object directly in text
-            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-            if json_match:
-                json_str = json_match.group(0)
-                try:
-                    parsed = json.loads(json_str)
-                    logger.info(f"Successfully parsed JSON from text, type: {type(parsed)}")
-                    return parsed
-                except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse JSON from text: {str(e)}")
-                    raise ValueError(f"Invalid JSON in response: {str(e)}")
-            
-            # If all parsing attempts fail
-            logger.error(f"Could not find valid JSON in Claude response: {response_text[:200]}...")
-            raise ValueError("Claude response does not contain valid JSON")
+        except json.JSONDecodeError as e:
+            logger.debug(f"Direct JSON parsing failed: {str(e)}")
+        
+        # Claude might wrap JSON in markdown code blocks
+        # Try to extract JSON from ```json ... ``` blocks
+        logger.debug("Trying to extract from markdown code blocks")
+        
+        # Look for JSON code block (non-greedy match for nested braces)
+        json_match = re.search(r'```(?:json)?\s*(\{.*\})\s*```', response_text, re.DOTALL)
+        if json_match:
+            json_str = json_match.group(1)
+            try:
+                parsed = json.loads(json_str)
+                logger.info(f"Successfully parsed JSON from code block, type: {type(parsed)}")
+                return parsed
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse JSON from code block: {str(e)}")
+                logger.error(f"Problematic JSON (first 1000 chars): {json_str[:1000]}")
+                raise ValueError(f"Invalid JSON in code block: {str(e)}")
+        
+        # Try to find JSON object directly in text (greedy match to get full object)
+        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+        if json_match:
+            json_str = json_match.group(0)
+            try:
+                parsed = json.loads(json_str)
+                logger.info(f"Successfully parsed JSON from text, type: {type(parsed)}")
+                return parsed
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse JSON from text: {str(e)}")
+                logger.error(f"Error at position {e.pos} in JSON")
+                
+                # Log context around the error
+                if e.pos and e.pos < len(json_str):
+                    start = max(0, e.pos - 200)
+                    end = min(len(json_str), e.pos + 200)
+                    context = json_str[start:end]
+                    logger.error(f"Context around error: ...{context}...")
+                
+                raise ValueError(f"Invalid JSON in response: {str(e)}")
+        
+        # If all parsing attempts fail
+        logger.error(f"Could not find valid JSON in Claude response: {response_text[:200]}...")
+        raise ValueError("Claude response does not contain valid JSON")
 
 
 # Global Bedrock service instance

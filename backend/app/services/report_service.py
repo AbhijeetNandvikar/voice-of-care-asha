@@ -250,38 +250,58 @@ class ReportService:
             Parsed JSON report data from Claude
             
         Raises:
-            Exception: If Claude invocation fails
+            Exception: If Claude invocation fails after retries
         """
-        # Format prompt using bedrock service
-        prompt = self.bedrock.format_hbnc_report_prompt(visits_data)
+        max_retries = 3
+        last_error = None
         
-        # Invoke Claude
-        response = self.bedrock.invoke_claude(
-            prompt=prompt,
-            max_tokens=4096,
-            temperature=0.0
-        )
-        
-        # Parse JSON response
-        report_data = self.bedrock.parse_claude_json_response(response['content'])
-        
-        # Validate that report_data is a dictionary
-        if not isinstance(report_data, dict):
-            logger.error(f"Expected dict from parse_claude_json_response, got {type(report_data)}: {report_data}")
-            raise ValueError(f"Invalid report data format: expected dictionary, got {type(report_data).__name__}")
-        
-        # Validate required fields
-        if 'visits' not in report_data:
-            logger.error(f"Missing 'visits' key in report_data: {report_data}")
-            raise ValueError("Invalid report data: missing 'visits' field")
-        
-        if not isinstance(report_data['visits'], list):
-            logger.error(f"'visits' field is not a list: {type(report_data['visits'])}")
-            raise ValueError("Invalid report data: 'visits' must be a list")
-        
-        logger.info(f"Successfully parsed report data with {len(report_data['visits'])} visits")
-        
-        return report_data
+        for attempt in range(max_retries):
+            try:
+                # Format prompt using bedrock service
+                prompt = self.bedrock.format_hbnc_report_prompt(visits_data)
+                
+                # Invoke Claude
+                response = self.bedrock.invoke_claude(
+                    prompt=prompt,
+                    max_tokens=4096,
+                    temperature=0.0
+                )
+                
+                # Parse JSON response
+                report_data = self.bedrock.parse_claude_json_response(response['content'])
+                
+                # Validate that report_data is a dictionary
+                if not isinstance(report_data, dict):
+                    logger.error(f"Expected dict from parse_claude_json_response, got {type(report_data)}: {report_data}")
+                    raise ValueError(f"Invalid report data format: expected dictionary, got {type(report_data).__name__}")
+                
+                # Validate required fields
+                if 'visits' not in report_data:
+                    logger.error(f"Missing 'visits' key in report_data: {report_data}")
+                    raise ValueError("Invalid report data: missing 'visits' field")
+                
+                if not isinstance(report_data['visits'], list):
+                    logger.error(f"'visits' field is not a list: {type(report_data['visits'])}")
+                    raise ValueError("Invalid report data: 'visits' must be a list")
+                
+                logger.info(f"Successfully parsed report data with {len(report_data['visits'])} visits")
+                
+                return report_data
+                
+            except (ValueError, json.JSONDecodeError) as e:
+                last_error = e
+                logger.warning(f"Attempt {attempt + 1}/{max_retries} failed to parse Claude response: {str(e)}")
+                
+                if attempt < max_retries - 1:
+                    logger.info(f"Retrying Claude invocation (attempt {attempt + 2}/{max_retries})...")
+                    continue
+                else:
+                    logger.error(f"All {max_retries} attempts failed to generate valid report")
+                    raise Exception(f"Failed to generate valid report after {max_retries} attempts: {str(last_error)}")
+            
+            except Exception as e:
+                logger.error(f"Unexpected error during Claude invocation: {str(e)}", exc_info=True)
+                raise
     
     def build_excel(self, report_data: Dict[str, Any]) -> bytes:
         """

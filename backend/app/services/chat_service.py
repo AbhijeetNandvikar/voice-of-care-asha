@@ -30,6 +30,7 @@ Data model:
 
 Always use the available tools to look up real data before answering questions. Be concise and factual.
 If asked about counts, totals, or summaries, use get_dashboard_stats first. For specific queries, use the appropriate tool.
+When a user refers to a worker or beneficiary by name, use search_workers or get_beneficiaries with the name parameter first to find their ID.
 Format numbers clearly and explain what the data means in the healthcare context."""
 
 TOOLS = [
@@ -44,7 +45,7 @@ TOOLS = [
     },
     {
         "name": "get_visits_summary",
-        "description": "List visits with optional filters. Returns visit counts and summaries.",
+        "description": "List visits with optional filters. Returns visit counts and summaries. Results are ordered by visit date (most recent first).",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -55,7 +56,7 @@ TOOLS = [
                 },
                 "worker_id": {
                     "type": "string",
-                    "description": "Filter by worker ID (e.g., AW000001, MO000001)"
+                    "description": "Filter by worker ID (e.g., AW000001, MO000001). If you only have a worker name, use search_workers first to find their ID."
                 },
                 "days_back": {
                     "type": "integer",
@@ -64,6 +65,10 @@ TOOLS = [
                 "is_synced": {
                     "type": "boolean",
                     "description": "Filter by sync status"
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max number of recent visits to return in the list (default 10, max 50)"
                 }
             },
             "required": []
@@ -85,7 +90,7 @@ TOOLS = [
                 },
                 "assigned_asha_id": {
                     "type": "string",
-                    "description": "Filter by assigned ASHA worker ID (e.g., AW000001)"
+                    "description": "Filter by assigned ASHA worker ID (e.g., AW000001). If you only have a worker name, use search_workers first to find their ID."
                 },
                 "limit": {
                     "type": "integer",
@@ -96,11 +101,15 @@ TOOLS = [
         }
     },
     {
-        "name": "get_workers",
-        "description": "List workers with their visit counts. Useful for finding top performers.",
+        "name": "search_workers",
+        "description": "Search for workers by name or list workers with their visit counts. Use this when a user refers to a worker by name to find their worker_id.",
         "inputSchema": {
             "type": "object",
             "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Partial name search (first or last name)"
+                },
                 "worker_type": {
                     "type": "string",
                     "description": "Filter by worker type: asha_worker, medical_officer, anm, aaw"
@@ -160,8 +169,8 @@ def _execute_tool(tool_name: str, tool_input: Dict[str, Any], db: Session) -> st
             return _get_visits_summary(db, **tool_input)
         elif tool_name == "get_beneficiaries":
             return _get_beneficiaries(db, **tool_input)
-        elif tool_name == "get_workers":
-            return _get_workers(db, **tool_input)
+        elif tool_name == "search_workers":
+            return _search_workers(db, **tool_input)
         elif tool_name == "get_visit_details":
             return _get_visit_details(db, **tool_input)
         elif tool_name == "get_sync_status":
@@ -196,7 +205,8 @@ def _get_visits_summary(
     visit_type: str = None,
     worker_id: str = None,
     days_back: int = None,
-    is_synced: bool = None
+    is_synced: bool = None,
+    limit: int = 10
 ) -> str:
     q = db.query(Visit)
 
@@ -230,7 +240,7 @@ def _get_visits_summary(
         .all()
     )
 
-    recent = q.order_by(Visit.visit_date_time.desc()).limit(10).all()
+    recent = q.order_by(Visit.visit_date_time.desc()).limit(min(limit, 50)).all()
     recent_list = []
     for v in recent:
         worker = db.query(Worker).filter(Worker.id == v.assigned_asha_id).first()
@@ -262,10 +272,28 @@ def _get_beneficiaries(
     q = db.query(Beneficiary)
 
     if name:
-        q = q.filter(
-            (Beneficiary.first_name.ilike(f"%{name}%")) |
-            (Beneficiary.last_name.ilike(f"%{name}%"))
-        )
+        name_parts = name.strip().split()
+        if len(name_parts) >= 2:
+            # Full name provided - try multiple strategies for better recall
+            first_part = name_parts[0]
+            last_part = name_parts[-1]
+            q = q.filter(
+                # Strategy 1: Both parts match (most precise)
+                (Beneficiary.first_name.ilike(f"%{first_part}%") & Beneficiary.last_name.ilike(f"%{last_part}%")) |
+                # Strategy 2: Reversed order
+                (Beneficiary.first_name.ilike(f"%{last_part}%") & Beneficiary.last_name.ilike(f"%{first_part}%")) |
+                # Strategy 3: Either part matches either field (more forgiving)
+                Beneficiary.first_name.ilike(f"%{first_part}%") |
+                Beneficiary.last_name.ilike(f"%{last_part}%") |
+                Beneficiary.first_name.ilike(f"%{first_part}%") |
+                Beneficiary.last_name.ilike(f"%{first_part}%")
+            )
+        else:
+            # Single name - search in either field
+            q = q.filter(
+                (Beneficiary.first_name.ilike(f"%{name}%")) |
+                (Beneficiary.last_name.ilike(f"%{name}%"))
+            )
     if beneficiary_type:
         q = q.filter(Beneficiary.beneficiary_type == beneficiary_type)
     if assigned_asha_id:
@@ -300,11 +328,36 @@ def _get_beneficiaries(
     })
 
 
-def _get_workers(db: Session, worker_type: str = None, limit: int = 20) -> str:
+def _search_workers(db: Session, name: str = None, worker_type: str = None, limit: int = 20) -> str:
     q = db.query(Worker)
+    
+    if name:
+        name_parts = name.strip().split()
+        if len(name_parts) >= 2:
+            # Full name provided - try multiple strategies for better recall
+            first_part = name_parts[0]
+            last_part = name_parts[-1]
+            q = q.filter(
+                # Strategy 1: Both parts match (most precise)
+                (Worker.first_name.ilike(f"%{first_part}%") & Worker.last_name.ilike(f"%{last_part}%")) |
+                # Strategy 2: Reversed order
+                (Worker.first_name.ilike(f"%{last_part}%") & Worker.last_name.ilike(f"%{first_part}%")) |
+                # Strategy 3: Either part matches either field (more forgiving)
+                Worker.first_name.ilike(f"%{first_part}%") |
+                Worker.last_name.ilike(f"%{last_part}%") |
+                Worker.first_name.ilike(f"%{last_part}%") |
+                Worker.last_name.ilike(f"%{first_part}%")
+            )
+        else:
+            # Single name - search in either field
+            q = q.filter(
+                (Worker.first_name.ilike(f"%{name}%")) |
+                (Worker.last_name.ilike(f"%{name}%"))
+            )
     if worker_type:
         q = q.filter(Worker.worker_type == worker_type)
 
+    total = q.count()
     workers = q.limit(min(limit, 50)).all()
 
     result = []
@@ -323,7 +376,7 @@ def _get_workers(db: Session, worker_type: str = None, limit: int = 20) -> str:
     result.sort(key=lambda x: x["visit_count"], reverse=True)
 
     return json.dumps({
-        "total_workers": q.count(),
+        "total_matching": total,
         "workers": result
     })
 

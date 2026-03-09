@@ -25,6 +25,7 @@ interface VisitDetail {
       recorded_at: string;
     }>;
   };
+  question_map?: Record<string, string>;
   beneficiary?: {
     id: number;
     first_name: string;
@@ -201,7 +202,9 @@ export const VisitDetailModal: React.FC<VisitDetailModalProps> = ({
                     {visit.visit_data.answers.map((answer, index) => (
                       <div key={index} className="answer-item">
                         <div className="answer-header">
-                          <span className="question-id">{answer.question_id}</span>
+                          <span className="question-id">
+                            {visit.question_map?.[answer.question_id] ?? answer.question_id}
+                          </span>
                           <span className="recorded-at">
                             {formatDate(answer.recorded_at)}
                           </span>

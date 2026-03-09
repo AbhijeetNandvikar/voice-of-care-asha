@@ -75,7 +75,7 @@ class ReportService:
                 visit_type=visit_type,
                 start_date=start_date,
                 end_date=end_date,
-                worker_id=worker_db_id,
+                worker_id=None,
                 db=db
             )
             
